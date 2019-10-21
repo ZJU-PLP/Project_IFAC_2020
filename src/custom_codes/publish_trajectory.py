@@ -48,7 +48,7 @@ if __name__ == '__main__':
     rospy.init_node('publish_trajectory', anonymous=True)
 
     rospy.loginfo("Initiating publish_trajectory...")
-    marker_publisher = rospy.Publisher('visualization_marker_2', Marker, queue_size=100)
+    marker_publisher = rospy.Publisher('visualization_marker', Marker, queue_size=100)
 
     tf_listener = tf.TransformListener()
 
