@@ -4,7 +4,7 @@
 import sys
 import rospy
 import tf
-from tf.transformations import quaternion_from_euler #, quaternion_matrix
+from tf.transformations import quaternion_from_euler, euler_from_quaternion, quaternion_from_matrix, euler_from_matrix #, quaternion_matrix
 from tf import TransformListener, TransformerROS
 import actionlib
 
@@ -68,64 +68,6 @@ def parse_args():
     return args
 
 
-"""
-This function transforms from matrix to quaternion
-"""
-
-def quaternion_from_matrix(joint_values, isprecise=False):
-
-    th1, th2, th3, th4, th5, th6 = joint_values
-
-    matrix = [[-(sin(th1) * sin(th5) + cos(th1) * cos(th5) * cos(th2 + th3 + th4)) * cos(th6) + sin(th6) * sin(th2 + th3 + th4) * cos(th1), (sin(th1) * sin(th5) + cos(th1) * cos(th5) * cos(th2 + th3 + th4)) * sin(th6) + sin(th2 + th3 + th4) * cos(th1) * cos(th6), -sin(th1) * cos(th5) + sin(th5) * cos(th1) * cos(th2 + th3 + th4)],
-              [(-sin(th1) * cos(th5) * cos(th2 + th3 + th4) + sin(th5) * cos(th1)) * cos(th6) + sin(th1) * sin(th6) * sin(th2 + th3 + th4), (sin(th1) * cos(th5) * cos(th2 + th3 + th4) - sin(th5) * cos(th1)) * sin(th6) + sin(th1) * sin(th2 + th3 + th4) * cos(th6), sin(th1) * sin(th5) * cos(th2 + th3 + th4) + cos(th1) * cos(th5)],
-              [sin(th6) * cos(th2 + th3 + th4) + sin(th2 + th3 + th4) * cos(th5) * cos(th6), -sin(th6) * sin(th2 + th3 + th4) * cos(th5) + cos(th6) * cos(th2 + th3 + th4), -sin(th5) * sin(th2 + th3 + th4)]]
-
-    M = np.array(matrix, dtype=np.float64, copy=False)[:4, :4]
-    if isprecise:
-        q = np.empty((4, ))
-        t = np.trace(M)
-        if t > M[3, 3]:
-            q[0] = t
-            q[3] = M[1, 0] - M[0, 1]
-            q[2] = M[0, 2] - M[2, 0]
-            q[1] = M[2, 1] - M[1, 2]
-        else:
-            i, j, k = 0, 1, 2
-            if M[1, 1] > M[0, 0]:
-                i, j, k = 1, 2, 0
-            if M[2, 2] > M[i, i]:
-                i, j, k = 2, 0, 1
-            t = M[i, i] - (M[j, j] + M[k, k]) + M[3, 3]
-            q[i] = t
-            q[j] = M[i, j] + M[j, i]
-            q[k] = M[k, i] + M[i, k]
-            q[3] = M[k, j] - M[j, k]
-            q = q[[3, 0, 1, 2]]
-        q *= 0.5 / math.sqrt(t * M[3, 3])
-    else:
-        m00 = M[0, 0]
-        m01 = M[0, 1]
-        m02 = M[0, 2]
-        m10 = M[1, 0]
-        m11 = M[1, 1]
-        m12 = M[1, 2]
-        m20 = M[2, 0]
-        m21 = M[2, 1]
-        m22 = M[2, 2]
-        # symmetric matrix K
-        K = np.array([[m00 - m11 - m22, 0.0,         0.0,         0.0],
-                      [m01 + m10,     m11 - m00 - m22, 0.0,         0.0],
-                      [m02 + m20,     m12 + m21,     m22 - m00 - m11, 0.0],
-                      [m21 - m12,     m02 - m20,     m10 - m01,     m00 + m11 + m22]])
-        K /= 3.0
-        # quaternion is eigenvector of K that corresponds to largest eigenvalue
-        w, V = np.linalg.eigh(K)
-        q = V[[3, 0, 1, 2], np.argmax(w)]
-    if q[0] < 0.0:
-        np.negative(q, q)
-    return q
-
-
 class MoveGroupPythonIntefaceTutorial(object):
     """MoveGroupPythonIntefaceTutorial"""
 
@@ -148,6 +90,7 @@ class MoveGroupPythonIntefaceTutorial(object):
 
         self.tf = tf.TransformListener()
         self.scene = PlanningSceneInterface("base_link")
+
         self.marker = Marker()
         self.joint_states = JointState()
         self.joint_states.name = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint', 'wrist_1_joint', 'wrist_2_joint',
@@ -172,25 +115,68 @@ class MoveGroupPythonIntefaceTutorial(object):
         self.id = 100
         self.id2 = 130
 
+    def matrix_from_joint_angles(self):
+        th1, th2, th3, th4, th5, th6 = self.joint_states.position
+        d1, SO, EO, a2, a3, d4, d45, d5, d6 = self.ur5_param
+
+        matrix = [[-(sin(th1)*sin(th5) + cos(th1)*cos(th5)*cos(th2 + th3 + th4))*cos(th6) + sin(th6)*sin(th2 + th3 + th4)*cos(th1), (sin(th1)*sin(th5) + cos(th1)*cos(th5)*cos(th2 + th3 + th4))*sin(th6) + sin(th2 + th3 + th4)*cos(th1)*cos(th6), -sin(th1)*cos(th5) + sin(th5)*cos(th1)*cos(th2 + th3 + th4), -EO*sin(th1) - SO*sin(th1) + a2*cos(th1)*cos(th2) + a3*cos(th1)*cos(th2 + th3) - d45*sin(th1) - d5*sin(th2 + th3 + th4)*cos(th1) - d6*(sin(th1)*cos(th5) - sin(th5)*cos(th1)*cos(th2 + th3 + th4))], [-(sin(th1)*cos(th5)*cos(th2 + th3 + th4) - sin(th5)*cos(th1))*cos(th6) + sin(th1)*sin(th6)*sin(th2 + th3 + th4), (sin(th1)*cos(th5)*cos(th2 + th3 + th4) - sin(th5)*cos(th1))*sin(th6) + sin(th1)*sin(th2 + th3 + th4)*cos(th6), sin(th1)*sin(th5)*cos(th2 + th3 + th4) + cos(th1)*cos(th5), EO*cos(th1) + SO*cos(th1) + a2*sin(th1)*cos(th2) + a3*sin(th1)*cos(th2 + th3) + d45*cos(th1) - d5*sin(th1)*sin(th2 + th3 + th4) + d6*(sin(th1)*sin(th5)*cos(th2 + th3 + th4) + cos(th1)*cos(th5))], [sin(th6)*cos(th2 + th3 + th4) + sin(th2 + th3 + th4)*cos(th5)*cos(th6), -sin(th6)*sin(th2 + th3 + th4)*cos(th5) + cos(th6)*cos(th2 + th3 + th4), -sin(th5)*sin(th2 + th3 + th4), -a2*sin(th2) - a3*sin(th2 + th3) + d1 - d5*cos(th2 + th3 + th4) - d6*sin(th5)*sin(th2 + th3 + th4)], [0, 0, 0, 1]]
+        return matrix
+
     """
-    Get UR5 Inverse Kinematics
+    This function transforms from matrix to quaternion
     """
 
-    def get_ik(self, pose):
-        matrix = tf.TransformerROS()
-        q = quaternion_from_euler(1.5707, 1.5707, 0)
+    def quaternion_from_matrix(self):
+        # joint_values = self.joint_states.position
+        th1, th2, th3, th4, th5, th6 = self.joint_states.position
+        d1, SO, EO, a2, a3, d4, d45, d5, d6 = self.ur5_param
 
-        matrix2 = matrix.fromTranslationRotation(
-            (pose[0] * (-1), pose[1] * (-1), pose[2]), (q[0], q[1], q[2], q[3]))
+        matrix = [[-(sin(th1)*sin(th5) + cos(th1)*cos(th5)*cos(th2 + th3 + th4))*cos(th6) + sin(th6)*sin(th2 + th3 + th4)*cos(th1), (sin(th1)*sin(th5) + cos(th1)*cos(th5)*cos(th2 + th3 + th4))*sin(th6) + sin(th2 + th3 + th4)*cos(th1)*cos(th6), -sin(th1)*cos(th5) + sin(th5)*cos(th1)*cos(th2 + th3 + th4)],
+                  [-(sin(th1)*cos(th5)*cos(th2 + th3 + th4) - sin(th5)*cos(th1))*cos(th6) + sin(th1)*sin(th6)*sin(th2 + th3 + th4), (sin(th1)*cos(th5)*cos(th2 + th3 + th4) - sin(th5)*cos(th1))*sin(th6) + sin(th1)*sin(th2 + th3 + th4)*cos(th6), sin(th1)*sin(th5)*cos(th2 + th3 + th4) + cos(th1)*cos(th5)],
+                  [sin(th6)*cos(th2 + th3 + th4) + sin(th2 + th3 + th4)*cos(th5)*cos(th6), -sin(th6)*sin(th2 + th3 + th4)*cos(th5) + cos(th6)*cos(th2 + th3 + th4), -sin(th5)*sin(th2 + th3 + th4)]]
 
-        rospy.loginfo(matrix2)
-        th = invKine(matrix2)
-        sol1 = th[:, 0].transpose()
-        joint_values_from_ik = np.array(sol1)
+        m = np.array(matrix, dtype=np.float64, copy=False)[:4, :4]
+        m11 = m[0, 0]
+        m12 = m[0, 1]
+        m13 = m[0, 2]
+        m21 = m[1, 0]
+        m22 = m[1, 1]
+        m23 = m[1, 2]
+        m31 = m[2, 0]
+        m32 = m[2, 1]
+        m33 = m[2, 2]
+        trace = m11 + m22 + m33
 
-        joint_values = joint_values_from_ik[0, :]
+        if ( trace > 0 ):
+          s = 0.5 / np.sqrt( trace + 1.0 )
+          qw = 0.25 / s
+          qx=( m[2,1] - m[1,2] ) * s
+          qy=( m[0,2] - m[2,0] ) * s
+          qz=( m[1,0] - m[0,1] ) * s
 
-        return joint_values.tolist()
+        elif( m[0,0] > m[1,1] and m[0,0] > m[2,2] ):
+          s = 2.0 * np.sqrt( 1.0 + m[0,0] - m[1,1] - m[2,2] )
+          qw = ( m[2,1] - m[1,2] ) / s
+          qx=0.25 * s
+          qy=( m[0,1] + m[1,0] ) / s
+          qz=( m[0,2] + m[2,0] ) / s
+
+        elif( m[1,1] > m[2,2] ):
+          s = 2.0 * np.sqrt( 1.0 + m[1,1] - m[0,0] - m[2,2] )
+          qw = ( m[0,2] - m[2,0] ) / s
+          qx=( m[0,1] + m[1,0] ) / s
+          qy= 0.25 * s
+          qz=( m[1,2] + m[2,1] ) / s
+
+        else:
+          s = 2.0 * np.sqrt( 1.0 + m[2,2] - m[0,0] - m[1,1] )
+          qw = ( m[1,0] - m[0,1] ) / s
+          qx= ( m[0,2] + m[2,0] ) / s
+          qy= ( m[1,2] + m[2,1] ) / s
+          qz= 0.25 * s
+
+        q = [qx,qy,qz,qw]
+        return q
 
     """
     Also gets each frame position through lookupTransform
@@ -335,13 +321,20 @@ def main(args):
     way_points = []
     ur5_robot.scene.clear()
 
+    if arg.plot:
+        ur5_robot.pose.header.frame_id = "clear"
+        ur5_robot.pose_publisher.publish(ur5_robot.pose)
+
     # UR5 Initial position
-    raw_input("' =========== Aperte enter para posicionar o UR5 \n")
+    # raw_input("' =========== Aperte enter para posicionar o UR5 \n")
     # Posicao configurada no fake_controller_joint_states
     ur5_robot.joint_states.position = [0, -1.5707, 0, -1.5707, 1.5707, 0]
+
+
+    # ur5_robot.joint_states.position = [0, 0, 0, 0, 0, 0]
     way_points.append(ur5_robot.joint_states.position)
     ur5_robot.move(way_points, "gazebo")
-
+    rospy.sleep(1.0)
     # raw_input("' =========== Aperte enter para carregar os param. dos CPAs \n")
 
     # Obstacle positions
@@ -365,8 +358,9 @@ def main(args):
     ur5_robot.scene.sendColors()
 
     # Final position
-    ptFinal = [[-0.9, 0, 0.45]]
-    oriFinal = [0.01, 0.01, 0.01]
+    # ptFinal = [[-0.9, 0, 0.45]] # default
+    ptFinal = [[-0.23, 0.1, 0.8]] # for test
+    oriFinal = [-1.5707, 0, 1.5707]
     diam_goal = [0.05]
     ur5_robot.add_sphere(ptFinal, diam_goal, ColorRGBA(0.0, 1.0, 0.0, 0.8))
 
@@ -376,20 +370,34 @@ def main(args):
     zeta = [0.5 for i in range(7)]  # Attractive force gain of each obstacle
     eta = [0.00006 for i in range(6)]  # Repulsive gain of each obstacle
     rho_0 = [i / 2 for i in diam_obs]  # Influence distance of each obstacle
-    dist_att = 0.05  # Influence distance in workspace
-    dist_att_config = 0.15  # Influence distance in configuration space
-    alfa = 0.5  # Learning rate of positioning
-    alfa_rot = 0.4  # Learning rate of orientation
+    dist_att = 0.05  # Influence distance in workspace - default = 0.05
+    dist_att_config = 0.1  # Influence distance in configuration space
+    alfa = 0.5  # Grad step of positioning
+    alfa_rot = 0.3  # Grad step of orientation - default: 0.4
     CP_ur5_rep = 0.15  # Repulsive fields on UR5
 
     # Joint positions initialization
     if arg.CSV:
         ur5_joint_positions_vec = ur5_robot.joint_states.position
 
+    'Teste de orientacao'
     # Get current orientation and position of tool0 link
-    q = quaternion_from_matrix(ur5_robot.joint_states.position)
-    oriAtual = q[1], q[2], q[3], q[0]
-    ptAtual = get_ur5_position(ur5_robot.ur5_param, ur5_robot.joint_states.position, "tool0")
+    ptAtual, oriAtual = ur5_robot.tf.lookupTransform("base_link", "grasping_link", rospy.Time())
+    print("OriAtual from TF: ", oriAtual)
+    print("OriAtual em Euler from TF: ", euler_from_quaternion(oriAtual))
+
+    q = euler_from_matrix(ur5_robot.matrix_from_joint_angles())
+    print('\n')
+    print("ori q euler_from_matrix: ", q)
+    # print("ori q euler: ", euler_from_quaternion(q, axes='sxyz'))
+
+    corr = [0, 0, 0] # for test
+    new_q = [q[i] + corr[i] for i in range(len(corr))]
+    print('\n')
+    # print("Correcao: quaternion from euler", quaternion_from_euler(0, 0, 0))
+    print("Correcao: ori q euler: ", new_q)
+    # print("Correcao: ori q euler: ", euler_from_quaternion(q, axes='sxyz'))
+    # 'Teste de orientacao'
 
     hz = get_param("rate", 120)
     r = rospy.Rate(hz)
@@ -398,7 +406,9 @@ def main(args):
     n = 0
 
     # Choose to display the path
-    ur5_robot.pose.header.frame_id = "path"
+    if arg.plot:
+        ur5_robot.pose.header.frame_id = "path"
+        ur5_robot.pose_publisher.publish(ur5_robot.pose)
 
     raw_input("' =========== Aperte enter para iniciar o algoritmo dos CPAs")
     t0= time.clock()
@@ -422,6 +432,13 @@ def main(args):
             ur5_robot.joint_states.position = ur5_robot.joint_states.position + \
                 alfa_rot * joint_att_force_w[0]
 
+            # Get current orientation of grasping_link
+            oriAtual = euler_from_matrix(ur5_robot.matrix_from_joint_angles())
+
+            # Angle offset between grasping_link and base_link
+            # corr = [-1.5707, 0, 1.5707] # for test
+            # oriAtual = [oriAtual[i] + corr[i] for i in range(len(corr))]
+
         # Joint angles UPDATE - Repulsive force
         list = np.transpose(joint_rep_force[0]).tolist()
         for j in range(6):
@@ -429,15 +446,10 @@ def main(args):
                 ur5_robot.joint_states.position[i] = ur5_robot.joint_states.position[i] + \
                     alfa * list[j][i]
 
-        # Get current orientation of tool0 link
-        q = quaternion_from_matrix(ur5_robot.joint_states.position)
-        oriAtual = q[1], q[2], q[3], q[0]
-
         # Get current position of tool0 link
         ptAtual = get_ur5_position(ur5_robot.ur5_param, ur5_robot.joint_states.position, "tool0")
+        ur5_robot.visualize_path_planned(ptAtual)
 
-        # Angle offset between tool0 and base_link (base?)
-        oriAtual += quaternion_from_euler(1.5707, 1.5707, 0)
 
         # Get distance from EOF to goal
         dist_EOF_to_Goal = np.linalg.norm(ptAtual - np.asarray(ptFinal))
@@ -471,10 +483,10 @@ def main(args):
     # Smooth path generated by AAPF
     wayPointsSmoothed = smooth_path(way_points)
 
-    print("Time elapsed in while loop: ", t1 - t0) # CPU seconds elapsed (floating point)
-    print("Iterations: ", n)
-    print("Way points: ", len(way_points))
-    print("Distance to goal: ", dist_EOF_to_Goal)
+    # print("Time elapsed in while loop: ", t1) # CPU seconds elapsed (floating point)
+    # print("Iterations: ", n)
+    # print("Way points: ", len(way_points))
+    # print("Distance to goal: ", dist_EOF_to_Goal)
 
     # Generate a CSV file with joint angles
     if arg.CSV:
@@ -500,7 +512,7 @@ def main(args):
 
     if arg.plot:
         # Stop plotting trajectory
-        ur5_robot.pose.header.frame_id = "end"
+        ur5_robot.pose.header.frame_id = "clear"
         ur5_robot.pose_publisher.publish(ur5_robot.pose)
 
     if args.realUR5:

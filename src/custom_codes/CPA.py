@@ -19,8 +19,11 @@ rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, CP_ur5_r
 
         if abs(oriAtual[i] - oriFinal[i]) <= dist_att_config:
             f_att_w = -zeta[-1]*(oriAtual[i] - oriFinal[i])
+            # f_att_w = 0
         else:
-            f_att_w = -dist_att*zeta[-1]*(oriAtual[i] - oriFinal[i])/(dist_EOF_to_Goal)
+            f_att_w = -dist_att_config*zeta[-1]*(oriAtual[i] - oriFinal[i])/abs(oriAtual[i] - oriFinal[i])
+            # f_att_w = 0
+
 
         forces_p[i, 0] = f_att_l
         forces_w[i, 0] = f_att_w

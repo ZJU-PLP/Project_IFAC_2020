@@ -75,6 +75,6 @@ def smooth_path(way_points):
     plt.ylim(min(Joint1)-0.1, max(Joint1)+0.1)
     plt.xlim(0, len(index))
 
-    plt.show()
+    # plt.show()
 
     return wayPointsSmoothed

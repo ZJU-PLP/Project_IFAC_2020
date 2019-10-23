@@ -34,10 +34,10 @@ from numpy.linalg import det, norm
 # Customized code
 from get_geometric_jacobian import *
 from get_ur5_position import *
-from show_HTM import *
+# from show_HTM import *
 from get_dist3D import *
 # import CPA_classico
-from CPA_classico import *
+from CPA import *
 
 
 """
@@ -239,7 +239,7 @@ def main():
     r = rospy.Rate(hz)
 
     ptAtual, oriAtual = ur5_robot.tf.lookupTransform("base_link", "grasping_link", rospy.Time())
-
+    rospy.loginfo(oriAtual)
     dist_EOF_to_Goal = np.linalg.norm(ptAtual - np.asarray(ptFinal))
     n = 0
 
@@ -248,7 +248,7 @@ def main():
         Jacobian = get_geometric_jacobian(ur5_robot.ur5_param, ur5_robot.joint_states.position)
         CP_pos, CP_dist = ur5_robot.get_repulsive_cp(obs_pos, ur5_robot.joint_states.position, diam_rep_ur5)
 
-        joint_att_force_p, joint_att_force_w, joint_rep_force = CPA_classico.get_joint_forces(ptAtual, ptFinal, oriAtual, oriFinal,
+        joint_att_force_p, joint_att_force_w, joint_rep_force = CPA.get_joint_forces(ptAtual, ptFinal, oriAtual, oriFinal,
         dist_EOF_to_Goal, Jacobian, ur5_robot.joint_states.position, ur5_robot.ur5_param, zeta,
         eta, rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, diam_rep_ur5)
 
