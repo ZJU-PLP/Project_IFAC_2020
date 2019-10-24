@@ -59,8 +59,15 @@ def smooth_path(way_points):
     # len(index) = 983 -> steps gerados pelos campos potenciais
     xnew = np.linspace(0, max(red_index), num=len(index), endpoint=True)
     plt.plot(xnew, Joint1_cs(xnew), label='Cubic Spline - S new')
+    # plt.subplot(321)
     plt.plot(index, Joint1, label='Trajectory - ' + str(len(index)) + ' points')
     plt.plot(red_index, red_Joint1, 's')
+    # plt.subplot(322)
+    # plt.plot(index, Joint2, label='Trajectory - ' + str(len(index)) + ' points')
+    # plt.plot(red_index, red_Joint2, 's')
+    # plt.subplot(323)
+    # plt.plot(index, Joint3, label='Trajectory - ' + str(len(index)) + ' points')
+    # plt.plot(red_index, red_Joint3, 's')
 
     wayPointsSmoothed = []
     for idx in red_index:
@@ -75,6 +82,6 @@ def smooth_path(way_points):
     plt.ylim(min(Joint1)-0.1, max(Joint1)+0.1)
     plt.xlim(0, len(index))
 
-    plt.show()
+    # plt.show()
 
     return wayPointsSmoothed

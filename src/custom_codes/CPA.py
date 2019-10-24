@@ -11,7 +11,6 @@ rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, CP_ur5_r
     forces_w = np.zeros((3, 1))
 
     for i in range(3):
-
         if abs(ptAtual[i] - ptFinal[0][i]) <= dist_att:
             f_att_l = -zeta[-1]*(ptAtual[i] - ptFinal[0][i])
         else:
@@ -20,7 +19,7 @@ rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, CP_ur5_r
         if abs(oriAtual[i] - oriFinal[i]) <= dist_att_config:
             f_att_w = -zeta[-1]*(oriAtual[i] - oriFinal[i])
         else:
-            f_att_w = -dist_att*zeta[-1]*(oriAtual[i] - oriFinal[i])/(dist_EOF_to_Goal)
+            f_att_w = -dist_att_config*zeta[-1]*(oriAtual[i] - oriFinal[i])/(dist_EOF_to_Goal)
 
         forces_p[i, 0] = f_att_l
         forces_w[i, 0] = f_att_w
@@ -31,6 +30,8 @@ rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, CP_ur5_r
     JacobianAtt_w = np.asarray(Jacobian[6])
     joint_att_force_p = JacobianAtt_p.dot(forces_p)
     joint_att_force_w = JacobianAtt_w.dot(forces_w)
+    # Joint 1, Joint 2, Joint 3, Joint 4, Joint 5, Joint 6
+    joint_att_force_w = np.multiply(joint_att_force_w, [[0.1], [0.5], [0.1], [1], [1], [1]])
 
     ### Getting repulsive forces
     forcesRep = np.zeros((len(obs_pos), 6, 3))
