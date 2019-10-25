@@ -3,7 +3,7 @@ import numpy as np
 from numpy.linalg import norm
 import rospy
 
-def get_joint_forces(ptAtual, ptFinal, oriAtual, oriFinal, dist_EOF_to_Goal, Jacobian, joint_values, ur5_param, zeta, eta,
+def get_joint_forces(ptAtual, ptFinal, oriAtual, Displacement, dist_EOF_to_Goal, Jacobian, joint_values, ur5_param, zeta, eta,
 rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, CP_ur5_rep):
 
     # Getting attractive forces
@@ -16,10 +16,10 @@ rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, CP_ur5_r
         else:
             f_att_l = -dist_att*zeta[-1]*(ptAtual[i] - ptFinal[0][i])/(dist_EOF_to_Goal)
 
-        if abs(oriAtual[i] - oriFinal[i]) <= dist_att_config:
-            f_att_w = -zeta[-1]*(oriAtual[i] - oriFinal[i])
+        if abs(oriAtual[i] - Displacement[i]) <= dist_att_config:
+            f_att_w = -zeta[-1]*(oriAtual[i] - Displacement[i])
         else:
-            f_att_w = -dist_att_config*zeta[-1]*(oriAtual[i] - oriFinal[i])/(dist_EOF_to_Goal)
+            f_att_w = -dist_att_config*zeta[-1]*(oriAtual[i] - Displacement[i])/dist_EOF_to_Goal
 
         forces_p[i, 0] = f_att_l
         forces_w[i, 0] = f_att_w
@@ -29,9 +29,11 @@ rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, CP_ur5_r
     JacobianAtt_p = np.asarray(Jacobian[5])
     JacobianAtt_w = np.asarray(Jacobian[6])
     joint_att_force_p = JacobianAtt_p.dot(forces_p)
+    joint_att_force_p = np.multiply(joint_att_force_p, [[0.5], [0.1], [1.5], [1], [1], [1]])
+
     joint_att_force_w = JacobianAtt_w.dot(forces_w)
     # Joint 1, Joint 2, Joint 3, Joint 4, Joint 5, Joint 6
-    joint_att_force_w = np.multiply(joint_att_force_w, [[0.1], [0.5], [0.1], [1], [1], [1]])
+    joint_att_force_w = np.multiply(joint_att_force_w, [[0], [0], [0.05], [0.4], [0.4], [0.4]])
 
     ### Getting repulsive forces
     forcesRep = np.zeros((len(obs_pos), 6, 3))

@@ -26,7 +26,7 @@ def smooth_path(way_points):
         index.append(rownum)
         rownum += 1
 
-    step = 5
+    step = 15
     red_index = index[0:-1:step]
     red_Joint1 = Joint1[0:-1:step]
     red_Joint2 = Joint2[0:-1:step]
@@ -58,10 +58,10 @@ def smooth_path(way_points):
     # Agora max(red_index) = 983 devido ao hstack
     # len(index) = 983 -> steps gerados pelos campos potenciais
     xnew = np.linspace(0, max(red_index), num=len(index), endpoint=True)
-    plt.plot(xnew, Joint1_cs(xnew), label='Cubic Spline - S new')
+    plt.plot(xnew, Joint3_cs(xnew), label='Cubic Spline - S new')
     # plt.subplot(321)
-    plt.plot(index, Joint1, label='Trajectory - ' + str(len(index)) + ' points')
-    plt.plot(red_index, red_Joint1, 's')
+    plt.plot(index, Joint3, label='Trajectory - ' + str(len(index)) + ' points')
+    plt.plot(red_index, red_Joint3, 's')
     # plt.subplot(322)
     # plt.plot(index, Joint2, label='Trajectory - ' + str(len(index)) + ' points')
     # plt.plot(red_index, red_Joint2, 's')
@@ -79,7 +79,7 @@ def smooth_path(way_points):
     plt.xlabel("Iterations")
     plt.ylabel("Joint angles [rad]")
     plt.title("AAPF method with Orientation Control")
-    plt.ylim(min(Joint1)-0.1, max(Joint1)+0.1)
+    plt.ylim(min(Joint3)-0.1, max(Joint3)+0.1)
     plt.xlim(0, len(index))
 
     # plt.show()
