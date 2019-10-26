@@ -35,6 +35,10 @@ If you want to see the path being publish to RVIZ please run publish_trajectory.
 
 `rosrun custom_codes UR5_CPA_Gazebo.py --plot`
 
+If you want to see all the parameters related to UR5_CPA_Gazebo, please run the following command:
+
+`rosrun custom_codes UR5_CPA_Gazebo.py --h`
+
 ## Required packages
 
 See custom_codes/requirements.txt for more info

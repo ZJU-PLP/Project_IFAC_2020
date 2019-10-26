@@ -25,9 +25,9 @@ def visualize_path_planned(point, marker, id, color):
 def pose_publisher_callback(PoseStampedMsg):
     global trajectory, path
 
-    if(PoseStampedMsg.header.frame_id == "path"):
-        visualize_path_planned(PoseStampedMsg.pose.position, path, 13, ColorRGBA(0.0, 1.0, 0.0, 0.8))
-    elif(PoseStampedMsg.header.frame_id == "trajectory"):
+    # if(PoseStampedMsg.header.frame_id == "path"):
+    #     visualize_path_planned(PoseStampedMsg.pose.position, path, 13, ColorRGBA(0.0, 1.0, 0.0, 0.8))
+    if(PoseStampedMsg.header.frame_id == "trajectory"):
         while PoseStampedMsg.header.frame_id == "trajectory":
             try:
                 eof_position, _ = tf_listener.lookupTransform("base_link", "grasping_link", rospy.Time())

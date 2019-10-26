@@ -67,6 +67,14 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def print_joint_angles(ur5_joint_positions_vec, file):
+    with open('/home/caio/3_Projetos_UR5/Project_IFAC_2019/src/custom_codes/csv_files/' + file + '.csv', mode='w') as employee_file:
+        employee_writer = csv.writer(employee_file, delimiter=' ', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        employee_writer.writerow(['Index', 'Joint1', 'Joint2', 'Joint3', 'Joint4', 'Joint5', 'Joint6'])
+        n = 0
+        for position in ur5_joint_positions_vec:
+            employee_writer.writerow([n, position[0], position[1], position[2], position[3], position[4], position[5]])
+            n+=1
 
 class MoveGroupPythonIntefaceTutorial(object):
     """MoveGroupPythonIntefaceTutorial"""
@@ -86,7 +94,7 @@ class MoveGroupPythonIntefaceTutorial(object):
         self.pose_publisher = rospy.Publisher('pose_publisher_tp', PoseStamped, queue_size=10)
 
         # Topico para publicar marcadores para o Rviz
-        self.marker_publisher = rospy.Publisher('visualization_marker', Marker, queue_size=100)
+        self.marker_publisher = rospy.Publisher('visualization_marker2', Marker, queue_size=100)
 
         self.tf = tf.TransformListener()
         self.scene = PlanningSceneInterface("base_link")
@@ -244,7 +252,7 @@ class MoveGroupPythonIntefaceTutorial(object):
         self.marker.type = self.marker.LINE_STRIP
         self.marker.action = self.marker.ADD
         self.marker.scale = Vector3(0.008, 0.009, 0.1)
-        self.marker.color = ColorRGBA(0.0, 0.0, 1.0, 0.8)
+        self.marker.color = ColorRGBA(0.0, 1.0, 0.0, 0.8)
         self.marker_publisher.publish(self.marker)
 
     """
@@ -265,7 +273,7 @@ class MoveGroupPythonIntefaceTutorial(object):
             while not rospy.is_shutdown() and i < len(way_points):
                 g.trajectory.points.append(JointTrajectoryPoint(positions=way_points[i],
                                                                 velocities=[0] * 6,
-                                                                time_from_start=rospy.Duration(0.2 * i + 1))) #default 0.1
+                                                                time_from_start=rospy.Duration(0.4 * i + 1))) #default 0.1
                 i += 1
 
             if target == "gazebo":
@@ -308,15 +316,8 @@ class MoveGroupPythonIntefaceTutorial(object):
         dist_att = 0.05  # Influence distance in workspace
         dist_att_config = 0.2  # Influence distance in configuration space
         alfa = 0.5  # Grad step of positioning - Default: 0.5
-        alfa_rot = 0.1  # Grad step of orientation - Default: 0.4
+        alfa_rot = 0.05  # Grad step of orientation - Default: 0.4
         CP_ur5_rep = 0.15  # Repulsive fields on UR5
-
-        # Joint positions initialization
-        if arg.CSV:
-            ur5_joint_positions_vec = ur5_robot.joint_states.position
-
-        # ptAtual, oriAtual = ur5_robot.tf.lookupTransform("base_link", "grasping_link", rospy.Time())
-        # raw_input("OriAtual 0:" + str(euler_from_quaternion(oriAtual)))
 
         ptAtual = get_ur5_position(ur5_robot.ur5_param, ur5_robot.joint_states.position, "tool0")
 
@@ -327,13 +328,10 @@ class MoveGroupPythonIntefaceTutorial(object):
 
         n = 0
         err_ori = 1
+        corr = [R, P, Y]
 
         # Get current orientation and position of tool0 link
-        oriAtual = euler_from_matrix(ur5_robot.matrix_from_joint_angles())
-        corr = [R, P, Y] # for test
-        oriAtual = [oriAtual[i] + corr[i] for i in range(len(corr))]
-        raw_input("OriAtual antes de entrar no LOOP CORRIGIDO:" + str(oriAtual))
-        print("\n")
+        ur5_joint_positions_vec = ur5_robot.joint_states.position
 
         while dist_EOF_to_Goal > err or abs(err_ori) > 0.02 and not rospy.is_shutdown() and n < max_iter:
             # Get UR5 Jacobian of each link
@@ -343,15 +341,13 @@ class MoveGroupPythonIntefaceTutorial(object):
             # Get position and distance from each link to each obstacle
             CP_pos, CP_dist = ur5_robot.get_repulsive_cp(obs_pos, ur5_robot.joint_states.position, CP_ur5_rep)
 
+            oriAtual = euler_from_matrix(ur5_robot.matrix_from_joint_angles())
+            oriAtual = [oriAtual[i] + corr[i] for i in range(len(corr))]
+
             # Get attractive linear and angular forces and repulsive forces
-            joint_att_force_p, joint_att_force_w, joint_rep_force = CPA.get_joint_forces(ptAtual, ptFinal, oriAtual, Displacement,
+            joint_att_force_p, joint_att_force_w, joint_rep_force = CPA.get_joint_forces(args, ptAtual, ptFinal, oriAtual, Displacement,
                                                                                          dist_EOF_to_Goal, Jacobian, ur5_robot.joint_states.position, ur5_robot.ur5_param, zeta,
                                                                                          eta, rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, arg.APF, CP_ur5_rep)
-
-            oriAtual = euler_from_matrix(ur5_robot.matrix_from_joint_angles())
-            # raw_input("OriAtual antes de incrementar os angulos SEM correcao:" + str(oriAtual))
-            oriAtual = [oriAtual[i] + corr[i] for i in range(len(corr))]
-            # raw_input("OriAtual antes de incrementar os angulos COM correcao:" + str(oriAtual))
 
             # Joint angles UPDATE - Attractive force
             ur5_robot.joint_states.position = ur5_robot.joint_states.position + \
@@ -368,23 +364,23 @@ class MoveGroupPythonIntefaceTutorial(object):
                         alfa * list[j][i]
 
             matrix = ur5_robot.matrix_from_joint_angles()
-            # raw_input("Matrix:" + str([matrix[0][3], matrix[1][3], matrix[2][3]]))
-            # Get current orientation of tool0 link
 
             # Get current position of tool0 link
             ptAtual = get_ur5_position(ur5_robot.ur5_param, ur5_robot.joint_states.position, "tool0")
+
+            # Visualize path planned in RVIZ
             ur5_robot.visualize_path_planned(ptAtual)
 
-            # Angle offset between tool0 and base_link (base?)
-            # oriAtual += quaternion_from_euler(R, P, Y)
-
-            # err_ori = [abs(oriAtual[i] - corr[i]) for i in range(len(oriRPY))]
+            # Absolute orientation error
             err_ori = np.sum(oriAtual)
-            print("Err_ori: ", err_ori)
 
             # Get distance from EOF to goal
             dist_EOF_to_Goal = np.linalg.norm(ptAtual - np.asarray(ptFinal))
-            print("Dist to goal: " + str(dist_EOF_to_Goal))
+
+            # If true, publish topics to transform into csv later on
+            if arg.CSV:
+                ur5_joint_positions_vec = np.vstack((ur5_joint_positions_vec, ur5_robot.joint_states.position))
+
             # If true, publish topics to publish_trajectory.py in order to see the path in RVIZ
             # if n % 10 is used to reduced the total number of waypoints generated by APF or AAPF
             if arg.plot:
@@ -394,13 +390,8 @@ class MoveGroupPythonIntefaceTutorial(object):
                     ur5_robot.pose.pose.position.y = ptAtual[1]
                     ur5_robot.pose.pose.position.z = ptAtual[2]
                     ur5_robot.pose_publisher.publish(ur5_robot.pose)
-                    # Save way points in order to send to gazebo
+                    # Save way points in order to send it to gazebo
                     way_points.append(ur5_robot.joint_states.position)
-
-                    # If true, publish topics to transform into csv later on
-                    if arg.CSV:
-                        # ur5_joint_positions_vec.append(np.concatenate(([n+1], ur5_robot.joint_states.position), 0))
-                        ur5_joint_positions_vec = np.vstack((ur5_joint_positions_vec, ur5_robot.joint_states.position))
 
             try:
                 r.sleep()
@@ -409,8 +400,7 @@ class MoveGroupPythonIntefaceTutorial(object):
 
             n += 1
 
-        return way_points, n, dist_EOF_to_Goal, oriAtual
-
+        return way_points, n, dist_EOF_to_Goal, oriAtual, ur5_joint_positions_vec
 
 
 def main(args):
@@ -419,9 +409,9 @@ def main(args):
     ur5_robot.scene.clear()
 
     # Obstacle positions
-    oc = [-0.9, 0, 0.375 + 0.1]  # Obstacle reference point - 3D printer
+    oc = [0.86, 0, 0.375 + 0.1]  # Obstacle reference point - 3D printer
     d1 = -0.080
-    s = 1
+    s = -1
     obs_pos = [oc, np.add(oc, [s * 0.14, 0.0925, 0.255 + d1]), np.add(oc, [s * 0.14, 0.185, 0.255 + d1]), np.add(oc, [s * 0.14, 0, 0.255 + d1]), np.add(oc, [s * 0.14, -0.0925, 0.255 + d1]), np.add(oc, [s * 0.14, -0.185, 0.255 + d1]),
                np.add(oc, [s * 0.14, -0.185, 0.16 + d1]), np.add(oc, [s * 0.14, 0.185, 0.16 + d1]), np.add(oc, [s * 0.14, 0.0925, 0.05 + d1]), np.add(oc, [s * 0.14, 0.185, 0.05 + d1]), np.add(oc, [s * 0.14, 0, 0.05 + d1]),
                np.add(oc, [s * 0.14, -0.0925, 0.05 + d1]), np.add(oc, [s * 0.14, -0.185, 0.05 + d1])]
@@ -431,58 +421,30 @@ def main(args):
 
 
     # UR5 Initial position
-    # raw_input("' =========== Aperte enter para posicionar o UR5 \n")
-    # Posicao configurada no fake_controller_joint_states
-    # ur5_robot.joint_states.position = [0, -1.57, 0, -1.5707, 1.5707, 1.5707]
-    ur5_robot.joint_states.position = [0,  -1.5707,  0, -1.5707, -1.5707, 0] # virado para o outro lado
-    # ur5_robot.joint_states.position = [0, 0,  0, 0, 0, 0] # virado para o outro lado
+    raw_input("' =========== Aperte enter para posicionar o UR5 \n")
+    home_pos = [0, -1.5707, 0, -1.5707, -1.5707, -1.5707]
+    ur5_robot.joint_states.position = home_pos # virado para o outro lado
     way_points.append(ur5_robot.joint_states.position)
     ur5_robot.move(way_points, "gazebo")
 
-    if arg.plot:
-        # DISPLAY PATH IN RVIZ
-        ur5_robot.pose.header.frame_id = "path"
-        ur5_robot.pose_publisher.publish(ur5_robot.pose)
-
     oriAtual = euler_from_matrix(ur5_robot.matrix_from_joint_angles())
-    raw_input("Ori atual from CPA CUSTOM: " + str(oriAtual))
     ptAtual, oriAtual = ur5_robot.tf.lookupTransform("base_link", "grasping_link", rospy.Time())
-    raw_input("Ori atual from TF: " + str(euler_from_quaternion(oriAtual)))
 
     raw_input("' =========== Aperte enter para iniciar o algoritmo dos CPAs")
+
+    '''
+    Trajectory 1
+
+    '''
     # Final positions
-    ptFinal = [[0.6, 0, 0.55]] # defaul: [[-0.9, 0, 0.45]]
-    R, P, Y = 1.5707, 0, 1.5707 # default: 1.5707, 0, 1.5707
-    # R, P, Y = -6.28, 0, -1.5707 # default: 1.5707, 0, -1.5707
-    # R, P, Y = 2.9, 1.57, 0
+    ptFinal = [[0.55, 0, 0.55]]
+    # Angle correction relative to base_link (from grasping_link)
+    R, P, Y = 1.5707, 0, 1.5707
 
     t0= time.clock()
-    way_points, n, dist_EOF_to_Goal, oriAtual  = ur5_robot.CPA_loop(args, ur5_robot, way_points, ptFinal, obs_pos, diam_obs, R, P, Y)
+    way_points, n, dist_EOF_to_Goal, oriAtual, ur5_joint_positions_vec  = ur5_robot.CPA_loop(args, ur5_robot, way_points, ptFinal, obs_pos, diam_obs, R, P, Y)
     print("Ori atual depois dos CPAS LOOP: " + str(oriAtual))
     t1 = time.clock() - t0
-
-    # raw_input("OriAtual 2:" + str(oriAtual))
-
-
-    # # UR5 Initial position
-    # raw_input("' =========== Aperte enter para posicionar o UR5 \n")
-    # # Posicao configurada no fake_controller_joint_states
-    # ur5_robot.joint_states.position = [0, -1.5707, 0, -1.5707, 1.5707, 0]
-    # way_points.append(ur5_robot.joint_states.position)
-    # ur5_robot.move(way_points, "gazebo")
-    #
-    # if arg.plot:
-    #     # DISPLAY PATH IN RVIZ
-    #     ur5_robot.pose.header.frame_id = "path"
-    #     ur5_robot.pose_publisher.publish(ur5_robot.pose)
-    #
-    # raw_input("' =========== Aperte enter para iniciar o algoritmo dos CPAs")
-    # # Final positions
-    # ptFinal = [[-0.6, 0, 0.55]] # defaul: [[-0.9, 0, 0.45]]
-    # R, P, Y = 1.5707, 1.5707, 0
-    # t0= time.clock()
-    # way_points, n, dist_EOF_to_Goal  = ur5_robot.CPA_loop(ur5_robot, way_points, ptFinal, obs_pos, diam_obs, R, P, Y)
-    # t1 = time.clock() - t0
 
     # Smooth path generated by AAPF
     wayPointsSmoothed = smooth_path(way_points)
@@ -490,18 +452,45 @@ def main(args):
     print("Time elapsed in while loop: ", t1) # CPU seconds elapsed (floating point)
     print("Iterations: ", n)
     print("Way points: ", len(way_points))
+    print("Way points smoothed: ", len(wayPointsSmoothed))
     print("Distance to goal: ", dist_EOF_to_Goal)
 
-    # Generate a CSV file with joint angles
+    if arg.plot:
+        # choose the trajectory to display in RVIZ
+        ur5_robot.pose.header.frame_id = "trajectory"
+        ur5_robot.pose_publisher.publish(ur5_robot.pose)
+
+    # Generate a CSV file with joint angles for trajectory 1
     if arg.CSV:
-        with open('/home/caio/3_Projetos_UR5/Project_IFAC_2019/src/custom_codes/csv_files/Joint_states.csv', mode='w') as employee_file:
-            employee_writer = csv.writer(employee_file, delimiter=' ', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            employee_writer.writerow(['Index', 'Joint1', 'Joint2', 'Joint3', 'Joint4', 'Joint5', 'Joint6'])
-            pos = ur5_joint_positions_vec
-            n = 0
-            for position in pos:
-                employee_writer.writerow([n, position[0], position[1], position[2], position[3], position[4], position[5]])
-                n+=1
+        print_joint_angles(ur5_joint_positions_vec, 'joint_traj_1')
+        print_joint_angles(wayPointsSmoothed, 'joint_traj_1_smoothed')
+
+    raw_input("' =========== Press enter to send the trajectory to Gazebo \n")
+    ur5_robot.move(wayPointsSmoothed, "gazebo")
+
+    if args.realUR5:
+        raw_input("' =========== Aperte enter para posicionar o UR5 real na posicao UP\n")
+        ur5_robot.move((home_pos,), "real")
+
+        raw_input("' =========== Aperte enter para enviar a trajetoria para o UR5 !!!REAL!!! \n")
+        ur5_robot.move(wayPointsSmoothed, "real")
+
+    '''
+    Trajectory 2
+
+    '''
+
+    # Final position
+    ptFinal = [[0.8, 0, 0.55]]
+    way_points = []
+    way_points, n, dist_EOF_to_Goal, oriAtual, ur5_joint_positions_vec  = ur5_robot.CPA_loop(args, ur5_robot, way_points, ptFinal, obs_pos, diam_obs, R, P, Y)
+
+    # Smooth path generated by AAPF
+    wayPointsSmoothed = smooth_path(way_points)
+
+    print("Iterations: ", n)
+    print("Way points: ", len(way_points))
+    print("Way points smoothed: ", len(wayPointsSmoothed))
 
     if arg.plot:
         # choose the trajectory to display in RVIZ
@@ -511,49 +500,17 @@ def main(args):
     raw_input("' =========== Press enter to send the trajectory to Gazebo \n")
     ur5_robot.move(wayPointsSmoothed, "gazebo")
 
-    # ptAtual, oriAtual = ur5_robot.tf.lookupTransform("base_link", "grasping_link", rospy.Time())
-    # raw_input("OriAtual 3:" + str(euler_from_quaternion(oriAtual)))
-
-    # oriAtual = euler_from_matrix(ur5_robot.matrix_from_joint_angles())
-    # raw_input("OriAtual 4:" + str(oriAtual))
-
-    print(oriAtual)
-    raw_input("Ori atual from CPA: ")
-    ptAtual, oriAtual = ur5_robot.tf.lookupTransform("base_link", "grasping_link", rospy.Time())
-    print(euler_from_quaternion(oriAtual))
-    raw_input("Ori atual from TF: ")
-
-    ptFinal = [[0.8, 0, 0.55]] # defaul: [[-0.9, 0, 0.45]]
-    # R, P, Y = 1.5707, 0, 1.5707 # default: 1.5707, 0, -1.5707
-    way_points = []
-    way_points, n, dist_EOF_to_Goal, oriAtual  = ur5_robot.CPA_loop(args, ur5_robot, way_points, ptFinal, obs_pos, diam_obs, R, P, Y)
-
-    # print("Time elapsed in while loop: ", t1) # CPU seconds elapsed (floating point)
-    print("Iterations: ", n)
-    print("Way points: ", len(way_points))
-    # print("Distance to goal: ", dist_EOF_to_Goal)
-
-    # Smooth path generated by AAPF
-    wayPointsSmoothed = smooth_path(way_points)
-
-    raw_input("' =========== Press enter to send the trajectory to Gazebo \n")
-    ur5_robot.move(wayPointsSmoothed, "gazebo")
-
-
-    raw_input("' =========== Aperte enter para posicionar o UR5 na posicao inicial\n")
-    ur5_robot.move(([0, -1.5707, 0, -1.5707, 1.5707, 0],), "gazebo")
-
     if arg.plot:
         # Stop plotting trajectory
         ur5_robot.pose.header.frame_id = "end"
         ur5_robot.pose_publisher.publish(ur5_robot.pose)
 
-    if args.realUR5:
-        raw_input("' =========== Aperte enter para posicionar o UR5 real na posicao UP\n")
-        ur5_robot.move(([0, -1.5707, 0, -1.5707, 0, 0],), "real")
+    raw_input("' =========== Aperte enter para posicionar o UR5 na posicao inicial\n")
+    ur5_robot.move((home_pos,), "gazebo")
 
+    if args.realUR5:
         raw_input("' =========== Aperte enter para enviar a trajetoria para o UR5 !!!REAL!!! \n")
-        ur5_robot.move(way_points, "real")
+        ur5_robot.move(wayPointsSmoothed, "real")
 
 
 if __name__ == '__main__':
