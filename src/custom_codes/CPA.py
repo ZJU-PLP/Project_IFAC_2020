@@ -3,8 +3,8 @@ import numpy as np
 from numpy.linalg import norm
 import rospy
 
-def get_joint_forces(args, ptAtual, ptFinal, oriAtual, Displacement, dist_EOF_to_Goal, Jacobian, joint_values, ur5_param, zeta, eta,
-rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, CP_ur5_rep):
+def get_joint_forces(AAPF_state, ptAtual, ptFinal, oriAtual, Displacement, dist_EOF_to_Goal, Jacobian, joint_values, ur5_param, zeta, eta,
+rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CP_ur5_rep):
 
     # Getting attractive forces
     forces_p = np.zeros((3, 1))
@@ -40,7 +40,7 @@ rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CPAA_state, CP_ur5_r
     for j in range(6):
         for w in range(len(obs_pos)):
             if CP_dist[j][w] < (rho_0[w] + CP_ur5_rep/2):
-                if j == 5 and args.APF and w == 0:
+                if j == 5 and AAPF_state:# and w == 0:
                     for k in range(3):
                         nor = (CP_pos[j][k] - obs_pos[w][k])/CP_dist[j][w]
                         Frep1 = eta[j] * (1/CP_dist[j][w] - 1/rho_0[w]) * dist_EOF_to_Goal * dist_EOF_to_Goal / (CP_dist[j][w] * CP_dist[j][w] * (1 + dist_EOF_to_Goal*dist_EOF_to_Goal)) * nor

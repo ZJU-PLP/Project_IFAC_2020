@@ -55,11 +55,11 @@ def get_ur5_position(ur5_param, joint_values, frame):
         if frame == "wrist_3_link":
             return PJ_6
 
-    if frame in ['tool0', 'all']:
+    if frame in ['grasping_link', 'all']:
         PJ_7 = array([-EO*sin(th1) - SO*sin(th1) + a2*cos(th1)*cos(th2) + a3*cos(th1)*cos(th2 + th3) - d45*sin(th1) - d5*sin(th2 + th3 + th4)*cos(th1) - d6*(sin(th1)*cos(th5) - sin(th5)*cos(th1)*cos(th2 + th3 + th4)),
                  EO*cos(th1) + SO*cos(th1) + a2*sin(th1)*cos(th2) + a3*sin(th1)*cos(th2 + th3) + d45*cos(th1) - d5*sin(th1)*sin(th2 + th3 + th4) + d6*(sin(th1)*sin(th5)*cos(th2 + th3 + th4) + cos(th1)*cos(th5)),
                 -a2*sin(th2) - a3*sin(th2 + th3) + d1 - d5*cos(th2 + th3 + th4) - d6*sin(th5)*sin(th2 + th3 + th4)])
-        if frame in ['tool0']:
+        if frame in ['grasping_link']:
             return PJ_7
 
     if frame in ['all']:

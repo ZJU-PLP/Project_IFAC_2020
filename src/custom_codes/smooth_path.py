@@ -72,7 +72,7 @@ def smooth_path(way_points):
     plt.ylim(min(Joint3)-0.1, max(Joint3)+0.1)
     plt.xlim(0, len(index))
 
-    plt.show()
+    # plt.show()
 
     wayPointsSmoothed = []
     for idx in red_index:
