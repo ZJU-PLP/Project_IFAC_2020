@@ -5,6 +5,14 @@ import rospy
 
 def get_joint_forces(AAPF_state, ptAtual, ptFinal, oriAtual, Displacement, dist_EOF_to_Goal, Jacobian, joint_values, ur5_param, zeta, eta,
 rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CP_ur5_rep):
+    """
+    Get attractive and repulsive forces
+
+    :param CP_dist: [6][13] array vector corresponding to 6 joints and 13 obstacles
+    :param CP_pos: [6][3] array vector corresponding to 6 joints and 3 coordinates of each joint
+    :param obs_pos: [13][3] array vector corresponding to 13 obstacles and 3 coordinates
+    :return: attractive and repulsive forces
+    """
 
     # Getting attractive forces
     forces_p = np.zeros((3, 1))
@@ -37,8 +45,14 @@ rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CP_ur5_rep):
 
     ### Getting repulsive forces
     forcesRep = np.zeros((len(obs_pos), 6, 3))
+
+    # CP_dist -> [6][13] corresponding to 6 joints and 13 obstacles
+    # CP_pos -> [6][3] corresponding to 6 joints and 3 coordinates of each joint
+    # obs_pos -> [13][3] corresponding to 13 obstacles and 3 coordinates
+    # forcesRep -> [13][6][3] corresponding to 13 obstacles, 6 joints and 3 coordinates
+
     for j in range(6):
-        for w in range(len(obs_pos)):
+        for w in range(len(obs_pos)): # total number of obstacles - default: 13
             if CP_dist[j][w] < (rho_0[w] + CP_ur5_rep/2):
                 if j == 5 and AAPF_state:# and w == 0:
                     for k in range(3):
@@ -48,25 +62,27 @@ rho_0, dist_att, dist_att_config, CP_dist, CP_pos, obs_pos, CP_ur5_rep):
                         nrg = (CP_pos[j][k] - ptFinal[0][k])/dist_EOF_to_Goal
                         Frep2 = eta[j] * (1/CP_dist[j][w] - 1/rho_0[w]) * (1/CP_dist[j][w] - 1/rho_0[w]) * dist_EOF_to_Goal * nrg
 
-                        forcesRep[j][k] = Frep1 + Frep2
+                        forcesRep[w][j][k] = Frep1 + Frep2
                 else:
                     for k in range (3):
-                        f_rep = eta[j] * (1/CP_dist[j][w] - 1/rho_0[w]) * 1 / (CP_dist[j][w]*CP_dist[j][w]) * (CP_pos[j][k] - obs_pos[w][k])/CP_dist[j][w]
-                        forcesRep[w][j] = f_rep
+                        f_rep = eta[j] * (1/CP_dist[j][w] - 1/rho_0[w]) * (1 / (CP_dist[j][w]*CP_dist[j][w])) * (CP_pos[j][k] - obs_pos[w][k])/CP_dist[j][w]
+                        forcesRep[w][j] = f_rep # forcesRep[13][6][3]
             else:
-                forcesRep[w][j] = [0, 0, 0]
+                forcesRep[w][j] = [0, 0, 0] # forcesRep[13][6]
 
     joint_rep_force = []
     f = np.zeros((3, 1))
     forcesRep = np.asarray(forcesRep)
     for q in range(6):
-
         for w in range(len(obs_pos)):
             JacobianRep = np.asarray(Jacobian[q])
             f[0] += forcesRep[w][q][0]
             f[1] += forcesRep[w][q][1]
             f[2] += forcesRep[w][q][2]
 
-        joint_rep_force.append(JacobianRep.dot(f))
+        # f retorna primeiro as forcas repulsivas para todos os obstaculos relacionado a mesma junta (coordenadas x, y, z)
+        # raw_input(f)
+        # f eh uma matriz 3x1 e Jacobian rep eh uma matriz 1x3
+        joint_rep_force.append(JacobianRep.dot(f)) # calcula o jacobiano para cada matriz
 
     return np.transpose(joint_att_force_p), np.transpose(joint_att_force_w), np.transpose(joint_rep_force)
