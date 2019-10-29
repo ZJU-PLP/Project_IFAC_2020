@@ -542,8 +542,8 @@ class MoveGroupPythonIntefaceTutorial(object):
             self.pose.header.frame_id = "trajectory"
             self.pose_publisher.publish(self.pose)
 
-        # raw_input("' =========== Press enter to send the trajectory to Gazebo \n")
-        # self.move(wayPointsSmoothed, "gazebo")
+        raw_input("' =========== Press enter to send the trajectory to Gazebo \n")
+        self.move(wayPointsSmoothed, "gazebo")
 
         if args.realUR5:
             raw_input("' =========== Aperte enter para enviar a trajetoria para o UR5 !!!REAL!!! \n")
