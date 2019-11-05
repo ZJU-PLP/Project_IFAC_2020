@@ -75,7 +75,7 @@ def smooth_path(way_points):
     # plt.show()
 
     wayPointsSmoothed = []
-    for idx in red_index:
+    for idx in index: #index or red_index
         array = np.array([Joint1_cs(xnew)[idx], Joint2_cs(xnew)[idx], Joint3_cs(xnew)[idx],
         Joint4_cs(xnew)[idx], Joint5_cs(xnew)[idx], Joint6_cs(xnew)[idx]])
         wayPointsSmoothed.append(array)

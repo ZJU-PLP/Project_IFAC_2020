@@ -39,6 +39,10 @@ If you want to see all the parameters related to UR5_CPA_Gazebo, please run the 
 
 `rosrun custom_codes UR5_CPA_Gazebo.py --h`
 
+If you are working with real UR5 use the following command:
+
+`roslaunch ur_modern_driver ur5_bringup.launch robot_ip:=ROBOT_IP`
+
 ## Required packages
 
 See custom_codes/requirements.txt for more info

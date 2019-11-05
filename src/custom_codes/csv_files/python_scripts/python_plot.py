@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline, interp1d
 
-with open('Joint_states.csv') as csvfile:
+with open('joint_traj_2_APF.csv') as csvfile:
     reader = list(csv.reader(csvfile))
 
     rownum = 0
@@ -42,7 +42,7 @@ Joint6 = np.asarray(Joint6)
 Joint6 = Joint6.astype(np.float)
 
 #
-step = 5
+step = 50
 red_index = index[0:-1:step]
 red_Joint1 = Joint1[0:-1:step]
 red_Joint2 = Joint2[0:-1:step]
@@ -74,20 +74,22 @@ Joint6_cs = interp1d(red_index, red_Joint6, kind='cubic')
 # Agora max(red_index) = 983 devido ao hstack
 # len(index) = 983 -> steps gerados pelos campos potenciais
 xnew = np.linspace(0, max(red_index), num=len(index), endpoint=True)
+raw_input(len(xnew))
 plt.plot(xnew, Joint1_cs(xnew), label='Cubic Spline - S new')
 plt.plot(index, Joint1, label='Trajectory - ' + str(len(index)) + ' points')
 plt.plot(red_index, red_Joint1, 's')
 
-print(Joint1_cs(xnew)[0])
+# print(Joint1_cs(xnew)[0])
 
 wayPointsSmoothed = []
 joint_angles = []
-for idx in red_index:
+# index
+for idx in index:
     array = np.array([Joint1_cs(xnew)[idx], Joint2_cs(xnew)[idx], Joint3_cs(xnew)[idx],
     Joint4_cs(xnew)[idx], Joint5_cs(xnew)[idx], Joint6_cs(xnew)[idx]])
     wayPointsSmoothed.append(array)
 
-print(wayPointsSmoothed)
+print(len(wayPointsSmoothed))
 
 plt.legend(loc='best', ncol=2)
 plt.xlabel("Iterations")
