@@ -60,9 +60,9 @@ def smooth_path(way_points):
     xnew = np.linspace(0, max(red_index), num=len(index), endpoint=True)
 
     # plt.subplot(321)
-    plt.plot(xnew, Joint3_cs(xnew), label='Cubic Spline - S new - Joint 3')
-    plt.plot(index, Joint3, label='Trajectory - ' + str(len(index)) + ' points')
-    plt.plot(red_index, red_Joint3, 's')
+    # plt.plot(xnew, Joint3_cs(xnew), label='Cubic Spline - S new - Joint 3')
+    # plt.plot(index, Joint3, label='Trajectory - ' + str(len(index)) + ' points')
+    # plt.plot(red_index, red_Joint3, 's')
 
 
     plt.legend(loc='best', ncol=2)

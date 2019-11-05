@@ -35,6 +35,7 @@ import csv
 import argparse
 import time
 from itertools import izip_longest
+import matplotlib.pyplot as plt
 
 # Customized code
 from get_geometric_jacobian import *
@@ -60,9 +61,10 @@ def get_param(name, value=None):
 def parse_args():
     parser = argparse.ArgumentParser(description='AAPF_Orientation')
     # store_false assumes that variable is already true and is only set to false if is given in command terminal
-    parser.add_argument('--APF', action='store_false', help='Choose AAPF instead of APF')
-    parser.add_argument('--COMP', action='store_true', help='Simulate APF and AAPF for comparison and generate CSV files for each of them')
-    parser.add_argument('--OC_Off', action='store_false', help='Deactivate Orientation Control')
+    parser.add_argument('--AAPF', action='store_true', help='Choose AAPF instead of APF')
+    parser.add_argument('--APF', action='store_true', help='Choose APF instead of AAPF')
+    parser.add_argument('--OriON', action='store_true', help='Activate Orientation Control')
+    parser.add_argument('--COMP', action='store_true', help='Compares distance to goal using APF, AAPF w/ and without ori control')
     parser.add_argument('--CSV', action='store_true', help='Write topics into a CSV file')
     parser.add_argument('--plot', action='store_true', help='Plot path to RVIZ through publish_trajectory.py (run this node first)')
     parser.add_argument('--realUR5', action='store_true', help='Enable real UR5 controlling')
@@ -78,20 +80,21 @@ def print_joint_angles(args, vec, file, type):
             for position in vec:
                 employee_writer.writerow([n, position[0], position[1], position[2], position[3], position[4], position[5]])
                 n+=1
-        if type == 'dist_to_goal' and args.COMP:
-            employee_writer.writerow(['Index', 'dist_to_goal_AAPF', 'dist_to_goal_APF'])
+        elif type == 'dist_to_goal' and args.COMP:
+            employee_writer.writerow(['Index', 'dist_to_goal_AAPF_OriON', 'dist_to_goal_APF_OriON', 'dist_to_goal_AAPF_OriOFF'])
             new_vec1 = [x[0] for x in vec[0]]
             new_vec2 = [x[0] for x in vec[1]]
+            new_vec3 = [x[0] for x in vec[2]]
             new_index = [x for x in range(max(len(vec[0]),len(vec[1])))]
-            rows = izip_longest(new_index, new_vec1, new_vec2, fillvalue='nan')
+            rows = izip_longest(new_index, new_vec1, new_vec2, new_vec3, fillvalue='nan')
             employee_writer.writerows(rows)
         elif type == 'dist_to_goal':
-            employee_writer.writerow(['Index', 'dist_to_goal_AAPF'])
+            employee_writer.writerow(['Index', 'dist_to_goal'])
             n = 0
             for dist in vec:
                 employee_writer.writerow([n, dist[0]])
                 n+=1
-        elif type == 'euler_angles' and args.COMP:
+        elif type == 'euler_angles':
             employee_writer.writerow(['Index', 'Roll', 'Pitch', 'Yaw'])
             roll, pitch, yaw = zip(*vec)
             new_index = [x for x in range(len(roll))]
@@ -108,7 +111,7 @@ def print_output(n, way_points, wayPointsSmoothed, dist_EOF_to_Goal):
 class MoveGroupPythonIntefaceTutorial(object):
     """MoveGroupPythonIntefaceTutorial"""
 
-    def __init__(self, args, comp = False):
+    def __init__(self, args):
         super(MoveGroupPythonIntefaceTutorial, self).__init__()
 
         moveit_commander.roscpp_initialize(sys.argv)
@@ -139,9 +142,6 @@ class MoveGroupPythonIntefaceTutorial(object):
         # Plot path inside while loop
         self.plot_path = True
 
-        # Choose APF instead of AAPF if set True
-        self.AAPF = True
-
         self.n = 1
         self.id = 100
         self.id2 = 130
@@ -150,23 +150,24 @@ class MoveGroupPythonIntefaceTutorial(object):
         self.diam_goal = [0.05]
         self.ptFinal = [[0.55, 0.0, 0.55]]
 
-        if not comp:
-            self.client = actionlib.SimpleActionClient('arm_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
-            print "Waiting for server (gazebo)..."
-            self.client.wait_for_server()
-            print "Connected to server (gazebo)"
+        self.client = actionlib.SimpleActionClient('arm_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
+        print "Waiting for server (gazebo)..."
+        self.client.wait_for_server()
+        print "Connected to server (gazebo)"
 
-            # Obstacle positions
-            oc = [0.86, 0, 0.375]  # Obstacle reference point - 3D printer
-            d1 = -0.080
-            s = -1
-            self.obs_pos = [oc, np.add(oc, [s * 0.14, 0.0925, 0.255 + d1]), np.add(oc, [s * 0.14, 0.185, 0.255 + d1]), np.add(oc, [s * 0.14, 0, 0.255 + d1]), np.add(oc, [s * 0.14, -0.0925, 0.255 + d1]), np.add(oc, [s * 0.14, -0.185, 0.255 + d1]),
-                       np.add(oc, [s * 0.14, -0.185, 0.16 + d1]), np.add(oc, [s * 0.14, 0.185, 0.16 + d1]), np.add(oc, [s * 0.14, 0.0925, 0.05 + d1]), np.add(oc, [s * 0.14, 0.185, 0.05 + d1]), np.add(oc, [s * 0.14, 0, 0.05 + d1]),
-                       np.add(oc, [s * 0.14, -0.0925, 0.05 + d1]), np.add(oc, [s * 0.14, -0.185, 0.05 + d1])]
-            self.diam_obs = [0.18] * len(self.obs_pos)  # Main obstacle repulsive field
-            self.diam_obs[0] = 0.3
-            self.add_sphere(self.obs_pos, self.diam_obs, ColorRGBA(1.0, 0.0, 0.0, 0.3))
+        # Obstacle positions
+        oc = [0.86, 0, 0.375]  # Obstacle reference point - 3D printer
+        d1 = -0.080
+        s = -1
+        self.obs_pos = [oc, np.add(oc, [s * 0.14, 0.0925, 0.255 + d1]), np.add(oc, [s * 0.14, 0.185, 0.255 + d1]), np.add(oc, [s * 0.14, 0, 0.255 + d1]), np.add(oc, [s * 0.14, -0.0925, 0.255 + d1]), np.add(oc, [s * 0.14, -0.185, 0.255 + d1]),
+                   np.add(oc, [s * 0.14, -0.185, 0.16 + d1]), np.add(oc, [s * 0.14, 0.185, 0.16 + d1]), np.add(oc, [s * 0.14, 0.0925, 0.05 + d1]), np.add(oc, [s * 0.14, 0.185, 0.05 + d1]), np.add(oc, [s * 0.14, 0, 0.05 + d1]),
+                   np.add(oc, [s * 0.14, -0.0925, 0.05 + d1]), np.add(oc, [s * 0.14, -0.185, 0.05 + d1])]
+        self.diam_obs = [0.18] * len(self.obs_pos)  # Main obstacle repulsive field
+        self.diam_obs[0] = 0.3
+        self.add_sphere(self.obs_pos, self.diam_obs, ColorRGBA(1.0, 0.0, 0.0, 0.3))
 
+        # CPA PARAMETERS
+        self.eta = [0.0001 for i in range(6)]  # Repulsive gain of each obstacle default: 0.00006
 
         if args.realUR5:
             self.clientreal = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
@@ -184,26 +185,6 @@ class MoveGroupPythonIntefaceTutorial(object):
 
             matrix = [[-(sin(th1)*sin(th5) + cos(th1)*cos(th5)*cos(th2 + th3 + th4))*cos(th6) + sin(th6)*sin(th2 + th3 + th4)*cos(th1), (sin(th1)*sin(th5) + cos(th1)*cos(th5)*cos(th2 + th3 + th4))*sin(th6) + sin(th2 + th3 + th4)*cos(th1)*cos(th6), -sin(th1)*cos(th5) + sin(th5)*cos(th1)*cos(th2 + th3 + th4), -EO*sin(th1) - SO*sin(th1) + a2*cos(th1)*cos(th2) + a3*cos(th1)*cos(th2 + th3) - d45*sin(th1) - d5*sin(th2 + th3 + th4)*cos(th1) - d6*(sin(th1)*cos(th5) - sin(th5)*cos(th1)*cos(th2 + th3 + th4))], [-(sin(th1)*cos(th5)*cos(th2 + th3 + th4) - sin(th5)*cos(th1))*cos(th6) + sin(th1)*sin(th6)*sin(th2 + th3 + th4), (sin(th1)*cos(th5)*cos(th2 + th3 + th4) - sin(th5)*cos(th1))*sin(th6) + sin(th1)*sin(th2 + th3 + th4)*cos(th6), sin(th1)*sin(th5)*cos(th2 + th3 + th4) + cos(th1)*cos(th5), EO*cos(th1) + SO*cos(th1) + a2*sin(th1)*cos(th2) + a3*sin(th1)*cos(th2 + th3) + d45*cos(th1) - d5*sin(th1)*sin(th2 + th3 + th4) + d6*(sin(th1)*sin(th5)*cos(th2 + th3 + th4) + cos(th1)*cos(th5))], [sin(th6)*cos(th2 + th3 + th4) + sin(th2 + th3 + th4)*cos(th5)*cos(th6), -sin(th6)*sin(th2 + th3 + th4)*cos(th5) + cos(th6)*cos(th2 + th3 + th4), -sin(th5)*sin(th2 + th3 + th4), -a2*sin(th2) - a3*sin(th2 + th3) + d1 - d5*cos(th2 + th3 + th4) - d6*sin(th5)*sin(th2 + th3 + th4)], [0, 0, 0, 1]]
             return matrix
-
-    """
-    Get UR5 Inverse Kinematics
-    """
-
-    def get_ik(self, pose):
-        matrix = tf.TransformerROS()
-        q = quaternion_from_euler(1.5707, 1.5707, 0)
-
-        matrix2 = matrix.fromTranslationRotation(
-            (pose[0] * (-1), pose[1] * (-1), pose[2]), (q[0], q[1], q[2], q[3]))
-
-        rospy.loginfo(matrix2)
-        th = invKine(matrix2)
-        sol1 = th[:, 0].transpose()
-        joint_values_from_ik = np.array(sol1)
-
-        joint_values = joint_values_from_ik[0, :]
-
-        return joint_values.tolist()
 
     """
     Also gets each frame position through lookupTransform
@@ -236,7 +217,7 @@ class MoveGroupPythonIntefaceTutorial(object):
             link_position = get_ur5_position(self.ur5_param, joint_values, ur5_links[i])
             CP_pos.append(link_position)
             CP_inter = []
-            # self.add_sphere2(link_position, CP_ur5_rep, ColorRGBA(1.0, 0.0, 0.0, 0.5)) # Plot UR5 repulsive fields
+            # self.add_sphere2(link_position, CP_ur5_rep[i], ColorRGBA(1.0, 0.0, 0.0, 0.2)) # Plot UR5 repulsive fields
             # Calculates distance from link position to each obstacle and store it in CP_dist
             for y in range(len(obs_pos)):
                 CP_inter.append(np.linalg.norm(link_position - obs_pos[y]))
@@ -333,7 +314,7 @@ class MoveGroupPythonIntefaceTutorial(object):
             while not rospy.is_shutdown() and i < len(way_points):
                 g.trajectory.points.append(JointTrajectoryPoint(positions=way_points[i],
                                                                 velocities=[0] * 6,
-                                                                time_from_start=rospy.Duration(0.1 * i + 5))) #default 0.1
+                                                                time_from_start=rospy.Duration(0.01 * i + 3))) #default 0.1*i + 5
                 i += 1
 
             if target == "gazebo":
@@ -350,41 +331,43 @@ class MoveGroupPythonIntefaceTutorial(object):
         except:
             raise
 
-    def CPA_loop(self, args, ur5_robot, way_points, R, P, Y):
+    def CPA_loop(self, args, way_points, R, P, Y, AAPF_COMP = False, ORI_COMP = False):
 
 
         '# add_obstacles(name, height, radius, pose, orientation, r, g, b):'
-        # ur5_robot.add_obstacles("up", 0.54, 0.09, [-0.76, 0, 0.345], [1.5707, 1.5707, 0], 1, 0, 0)
-        # ur5_robot.add_obstacles("bottom", 0.54, 0.09, [-0.76, 0, 0.55], [1.5707, 1.5707, 0], 1, 0, 0)
-        # ur5_robot.add_obstacles("right", 0.35, 0.09, [-0.76, 0.185, 0.455], [0, 0, 0], 1, 0, 0)
-        # ur5_robot.add_obstacles("left", 0.35, 0.09, [-0.76, -0.185, 0.455], [0, 0, 0], 1, 0, 0)
+        # self.add_obstacles("up", 0.54, 0.09, [-0.76, 0, 0.345], [1.5707, 1.5707, 0], 1, 0, 0)
+        # self.add_obstacles("bottom", 0.54, 0.09, [-0.76, 0, 0.55], [1.5707, 1.5707, 0], 1, 0, 0)
+        # self.add_obstacles("right", 0.35, 0.09, [-0.76, 0.185, 0.455], [0, 0, 0], 1, 0, 0)
+        # self.add_obstacles("left", 0.35, 0.09, [-0.76, -0.185, 0.455], [0, 0, 0], 1, 0, 0)
 
-        self.add_sphere(ur5_robot.ptFinal, ur5_robot.diam_goal, ColorRGBA(0.0, 1.0, 0.0, 1.0))
+        self.add_sphere(self.ptFinal, self.diam_goal, ColorRGBA(0.0, 1.0, 0.0, 1.0))
 
         # apply obstacle colors to moveit
-        ur5_robot.scene.sendColors()
+        self.scene.sendColors()
 
         # Final position
         Displacement = [0.01, 0.01, 0.01]
 
         # CPA Parameters
-        err = ur5_robot.diam_goal[0] / 2  # Max error allowed
+        err = self.diam_goal[0] / 2  # Max error allowed
         max_iter = 1500  # Max iterations
         zeta = [0.5 for i in range(7)]  # Attractive force gain of each obstacle
-        eta = [0.00006 for i in range(6)]  # Repulsive gain of each obstacle
         rho_0 = [i / 2 for i in self.diam_obs]  # Influence distance of each obstacle
         dist_att = 0.05  # Influence distance in workspace
         dist_att_config = 0.2  # Influence distance in configuration space
         alfa = 0.5  # Grad step of positioning - Default: 0.5
         alfa_rot = 0.05  # Grad step of orientation - Default: 0.4
-        CP_ur5_rep = 0.15  # Repulsive fields on UR5
+        CP_ur5_rep = [0.15]*6  # Repulsive fields on UR5
+        CP_ur5_rep[-2] = 0.15
+        if args.AAPF and not args.OriON or (AAPF_COMP and not ORI_COMP):
+            self.eta = [0.0006 for i in range(6)]
 
-        ptAtual = get_ur5_position(ur5_robot.ur5_param, ur5_robot.joint_states.position, "grasping_link")
+        ptAtual = get_ur5_position(self.ur5_param, self.joint_states.position, "grasping_link")
 
         hz = get_param("rate", 120)
         r = rospy.Rate(hz)
 
-        dist_EOF_to_Goal = np.linalg.norm(ptAtual - np.asarray(ur5_robot.ptFinal[0]))
+        dist_EOF_to_Goal = np.linalg.norm(ptAtual - np.asarray(self.ptFinal[0]))
         dist_EOF_to_Goal_vec = dist_EOF_to_Goal
 
         n = 0
@@ -392,7 +375,7 @@ class MoveGroupPythonIntefaceTutorial(object):
         corr = [R, P, Y]
 
         # Get current orientation and position of grasping_link
-        ur5_joint_positions_vec = ur5_robot.joint_states.position
+        ur5_joint_positions_vec = self.joint_states.position
 
         joint_attractive_forces = np.zeros(6)
         joint_rep_forces = np.zeros(6)
@@ -401,28 +384,29 @@ class MoveGroupPythonIntefaceTutorial(object):
 
         while (dist_EOF_to_Goal > err  or abs(err_ori) > 0.02) and not rospy.is_shutdown() and n < max_iter:
 
-
             # Get UR5 Jacobian of each link
             Jacobian = get_geometric_jacobian(
-                ur5_robot.ur5_param, ur5_robot.joint_states.position)
+                self.ur5_param, self.joint_states.position)
 
             # Get position and distance from each link to each obstacle
-            CP_pos, CP_dist = ur5_robot.get_repulsive_cp(self.obs_pos, ur5_robot.joint_states.position, CP_ur5_rep)
+            CP_pos, CP_dist = self.get_repulsive_cp(self.obs_pos, self.joint_states.position, CP_ur5_rep)
 
-            oriAtual = euler_from_matrix(ur5_robot.matrix_from_joint_angles())
+            oriAtual = euler_from_matrix(self.matrix_from_joint_angles())
             oriAtual = [oriAtual[i] + corr[i] for i in range(len(corr))]
 
             # Get attractive linear and angular forces and repulsive forces
             joint_att_force_p, joint_att_force_w, joint_rep_force = \
-                CPA.get_joint_forces(ur5_robot.AAPF, ptAtual, ur5_robot.ptFinal, oriAtual, Displacement,
-                                     dist_EOF_to_Goal, Jacobian, ur5_robot.joint_states.position, ur5_robot.ur5_param, zeta,
-                                     eta, rho_0, dist_att, dist_att_config, CP_dist, CP_pos, self.obs_pos, CP_ur5_rep)
+                CPA.get_joint_forces(args, ptAtual, self.ptFinal, oriAtual, Displacement,
+                                     dist_EOF_to_Goal, Jacobian, self.joint_states.position, self.ur5_param, zeta,
+                                     self.eta, rho_0, dist_att, dist_att_config, CP_dist, CP_pos, self.obs_pos, CP_ur5_rep, AAPF_COMP)
+
+            joint_rep_force = np.clip(joint_rep_force, -0.1, 0.1)
 
             # Joint angles UPDATE - Attractive force
-            ur5_robot.joint_states.position = ur5_robot.joint_states.position + \
+            self.joint_states.position = self.joint_states.position + \
                 alfa * joint_att_force_p[0]
-            if arg.OC_Off:
-                ur5_robot.joint_states.position = ur5_robot.joint_states.position + \
+            if args.OriON or ORI_COMP:
+                self.joint_states.position = self.joint_states.position + \
                     alfa_rot * joint_att_force_w[0]
 
             # Joint angles UPDATE - Repulsive force
@@ -430,27 +414,27 @@ class MoveGroupPythonIntefaceTutorial(object):
 
             for j in range(6):
                 for i in range(6):
-                    ur5_robot.joint_states.position[i] = ur5_robot.joint_states.position[i] + \
+                    self.joint_states.position[i] = self.joint_states.position[i] + \
                         alfa * list[j][i]
 
-            matrix = ur5_robot.matrix_from_joint_angles()
+            matrix = self.matrix_from_joint_angles()
 
             # Get current position of grasping_link
-            ptAtual = get_ur5_position(ur5_robot.ur5_param, ur5_robot.joint_states.position, "grasping_link")
+            ptAtual = get_ur5_position(self.ur5_param, self.joint_states.position, "grasping_link")
 
-            if ur5_robot.plot_path:
+            if self.plot_path:
                 # Visualize path planned in RVIZ
-                ur5_robot.visualize_path_planned(ptAtual)
+                self.visualize_path_planned(ptAtual)
 
             # Get absolute orientation error
             err_ori = np.sum(oriAtual)
 
             # Get distance from EOF to goal
-            dist_EOF_to_Goal = np.linalg.norm(ptAtual - np.asarray(ur5_robot.ptFinal))
+            dist_EOF_to_Goal = np.linalg.norm(ptAtual - np.asarray(self.ptFinal))
 
             # If true, publish topics to transform into csv later on
-            if arg.CSV:
-                ur5_joint_positions_vec = np.vstack((ur5_joint_positions_vec, ur5_robot.joint_states.position))
+            if args.CSV:
+                ur5_joint_positions_vec = np.vstack((ur5_joint_positions_vec, self.joint_states.position))
                 dist_EOF_to_Goal_vec = np.vstack((dist_EOF_to_Goal_vec, dist_EOF_to_Goal))
                 joint_attractive_forces = np.vstack((joint_attractive_forces, joint_att_force_p))
                 joint_rep_forces = np.vstack((joint_rep_forces, list[-1])) # list[-1] corresponds to rep forces on the last joint
@@ -458,14 +442,15 @@ class MoveGroupPythonIntefaceTutorial(object):
 
             # If true, publish topics to publish_trajectory.py in order to see the path in RVIZ
             # if n % 10 is used to reduced the total number of waypoints generated by APF or AAPF
-            if arg.plot:
+            if args.plot:
                 if n % 1 == 0:
-                    ur5_robot.pose.pose.position.x = ptAtual[0]
-                    ur5_robot.pose.pose.position.y = ptAtual[1]
-                    ur5_robot.pose.pose.position.z = ptAtual[2]
-                    ur5_robot.pose_publisher.publish(ur5_robot.pose)
+                    self.pose.pose.position.x = ptAtual[0]
+                    self.pose.pose.position.y = ptAtual[1]
+                    self.pose.pose.position.z = ptAtual[2]
+                    self.pose_publisher.publish(self.pose)
                     # Save way points in order to send it to gazebo
-                    way_points.append(ur5_robot.joint_states.position)
+
+            way_points.append(self.joint_states.position)
 
             try:
                 r.sleep()
@@ -476,84 +461,95 @@ class MoveGroupPythonIntefaceTutorial(object):
 
         return way_points, n, dist_EOF_to_Goal, ur5_joint_positions_vec, dist_EOF_to_Goal_vec, joint_attractive_forces, joint_rep_forces, ori_atual_vec
 
-    def trajectory_execution(self, args, point, home_pos, way_points, traj, ur5_robot_APF = None):
-        raw_input("' =========== Aperte enter para iniciar o algoritmo dos CPAAs")
+    def trajectory_execution(self, args, point, home_pos, way_points, traj):
+        raw_input("' =========== Aperte enter para iniciar o algoritmo")
 
-        if ur5_robot_APF:
-            ur5_robot_APF.scene.clear
+        # if ur5_robot_APF:
+        #     ur5_robot_APF.scene.clear
 
         self.scene.clear()
 
         # Final positions
         self.ptFinal = point
 
+        # ptAtual, oriAtual = self.tf.lookupTransform("base_link", "grasping_link", rospy.Time())
+        # raw_input("OriAtual: " + str(euler_from_quaternion(oriAtual)) )
+
         # Angle correction relative to base_link (from grasping_link)
+        #
         R, P, Y = 1.5707, 0, 1.5707
 
-        way_points, n, dist_EOF_to_Goal, ur5_joint_positions_vec, dist_EOF_to_Goal_vec, joint_attractive_forces, joint_rep_forces, ori_atual_rep = \
-            self.CPA_loop(self.AAPF, self, way_points, R, P, Y)
+        if not args.COMP:
+            way_points, n, dist_EOF_to_Goal, ur5_joint_positions_vec, dist_EOF_to_Goal_vec, joint_attractive_forces, joint_rep_forces, ori_atual_rep = \
+                self.CPA_loop(args, way_points, R, P, Y)
 
-        # Smooth path generated by AAPF
-        wayPointsSmoothed = smooth_path(way_points)
+            # Smooth path generated by AAPF
+            wayPointsSmoothed = smooth_path(way_points)
 
-        raw_input("qtde pontos suavizados: " + str(len(wayPointsSmoothed)))
-        raw_input("qtde pontos reais: " + str(len(way_points)))
+            print_output(n, way_points, wayPointsSmoothed, dist_EOF_to_Goal)
 
-        # print_output(n, way_points, wayPointsSmoothed, dist_EOF_to_Goal)
+            if args.OriON:
+                oriStatus = 'OriON'
+            else:
+                oriStatus = 'OriOFF'
 
-        # if arg.COMP and arg.CSV:
-        #     raw_input("' =========== Aperte enter para iniciar o algoritmo dos CPAs (classicos)")
-        #     way_points2 = []
-        #     ur5_robot_APF.ptFinal = point
-        #     ur5_robot_APF.plot_path = True
-        #     ur5_robot_APF.AAPF = False # Use False as default in order to use APF instead of AAPF for comparison
-        #     way_points2.append(ur5_robot_APF.joint_states.position)
-        #
-        #     way_points2, _, _, ur5_joint_positions_vec_APF, dist_EOF_to_Goal_vec_APF, joint_attractive_forces_APF, joint_rep_forces_APF, ori_atual_rep_APF = \
-        #         self.CPA_loop(args, ur5_robot_APF, way_points2, R, P, Y)
-        #
-        #     wayPointsSmoothed2 = smooth_path(way_points2)
-        #
-        #
-        #     dist_EOF_to_GOAL_traj = []
-        #     dist_EOF_to_GOAL_traj.append(dist_EOF_to_Goal_vec)
-        #     dist_EOF_to_GOAL_traj.append(dist_EOF_to_Goal_vec_APF)
-        #
-        #     print_joint_angles(args, ur5_joint_positions_vec, 'joint_' + str(traj) + '_AAPF', 'joint')
-        #     print_joint_angles(args, wayPointsSmoothed, 'joint_' + str(traj) + '_smoothed_AAPF', 'joint')
-        #     print_joint_angles(args, ur5_joint_positions_vec_APF, 'joint_' + str(traj) + '_APF', 'joint')
-        #
-        #     print_joint_angles(args, joint_attractive_forces[1:], 'ATTFORCE_' + str(traj) + '_AAPF', 'joint')
-        #     print_joint_angles(args, joint_attractive_forces_APF[1:], 'ATTFORCE_' + str(traj) + '_APF', 'joint')
-        #
-        #     print_joint_angles(args, joint_rep_forces[1:], 'REPFORCE_' + str(traj) + '_AAPF', 'joint')
-        #     print_joint_angles(args, joint_rep_forces_APF[1:], 'REPFORCE_' + str(traj) + '_APF', 'joint')
-        #
-        #     # raw_input(ori_atual_rep)
-        #     print_joint_angles(args, ori_atual_rep[1:], 'ORC_' + str(traj) + '_AAPF', 'euler_angles')
-        #     print_joint_angles(args, ori_atual_rep_APF[1:], 'ORC_' + str(traj) + '_APF', 'euler_angles')
-        #
-        #     print_joint_angles(args, dist_EOF_to_GOAL_traj, 'dist_to_goal_' + str(traj) + '_AAPF_e_APF', 'dist_to_goal')
+            if args.AAPF:
+                APFStatus = 'AAPF'
+            elif args.APF:
+                APFStatus = 'APF'
 
-        if arg.CSV:
-            print_joint_angles(args, ur5_joint_positions_vec, 'joint_' + str(traj) + '_AAPF', 'joint')
-            print_joint_angles(args, wayPointsSmoothed, 'joint_' + str(traj) + '_smoothed_AAPF', 'joint')
-            print_joint_angles(args, dist_EOF_to_Goal_vec, 'dist_to_goal_' + str(traj) + '_AAPF', 'dist_to_goal')
-            print_joint_angles(args, joint_attractive_forces[1:], 'ATTFORCE_' + str(traj) + '_AAPF', 'joint')
-            print_joint_angles(args, joint_rep_forces[1:], 'REPFORCE_' + str(traj) + '_AAPF', 'joint')
-            print_joint_angles(args, ori_atual_rep[1:], 'ORC_' + str(traj) + '_AAPF', 'euler_angles')
+            if args.CSV:
+                print_joint_angles(args, ur5_joint_positions_vec, 'joint_' +  str(APFStatus) + '_' + str(oriStatus), 'joint')
+                print_joint_angles(args, wayPointsSmoothed, 'joint_' + 'smoothed_' + str(APFStatus) + '_' + str(oriStatus), 'joint')
+                print_joint_angles(args, dist_EOF_to_Goal_vec, 'dist_to_goal_' +  str(APFStatus) + '_' + str(oriStatus), 'dist_to_goal')
+                print_joint_angles(args, joint_attractive_forces[1:], 'ATTFORCE_' +  str(APFStatus) + '_' + str(oriStatus), 'joint')
+                print_joint_angles(args, joint_rep_forces[1:], 'REPFORCE_' +  str(APFStatus) + '_' + str(oriStatus), 'joint')
+                # plt.plot(np.linspace(0, len(joint_rep_forces), len(joint_rep_forces)), joint_rep_forces)
+                # plt.show()
 
-        if arg.plot:
-            # choose the trajectory to display in RVIZ
-            self.pose.header.frame_id = "trajectory"
-            self.pose_publisher.publish(self.pose)
+                if args.OriON:
+                    print_joint_angles(args, ori_atual_rep[1:], 'ORC_' +  str(APFStatus) + '_' + str(oriStatus), 'euler_angles')
 
-        if args.realUR5:
-            raw_input("' =========== Aperte enter para enviar a trajetoria para o UR5 !!!REAL!!! \n")
-            self.move(wayPointsSmoothed, "real")
+            if args.plot:
+                # choose the trajectory to display in RVIZ
+                self.pose.header.frame_id = "trajectory"
+                self.pose_publisher.publish(self.pose)
+
+            if args.realUR5:
+                raw_input("' =========== Aperte enter para enviar a trajetoria para o UR5 !!!REAL!!! \n")
+                self.move(wayPointsSmoothed, "real")
+            else:
+                raw_input("' =========== Press enter to send the trajectory to Gazebo \n")
+                self.move(wayPointsSmoothed, "gazebo")
+
         else:
-            raw_input("' =========== Press enter to send the trajectory to Gazebo \n")
-            self.move(wayPointsSmoothed, "gazebo")
+            print("Generatin trajectory [AAPF: ON | Orientation Control: ON]")
+            AAPF_COMP = True
+            ORI_COMP = True
+            _, _, _, _, dist_EOF_to_Goal_AAPF_OriON, _, _, _ = self.CPA_loop(args, way_points, R, P, Y, AAPF_COMP, ORI_COMP)
+            dist_EOF_to_GOAL_traj = []
+            dist_EOF_to_GOAL_traj.append(dist_EOF_to_Goal_AAPF_OriON)
+
+            self.joint_states.position = home_pos
+            self.scene.clear()
+            print("Generatin trajectory [AAPF: OFF | Orientation Control: ON]")
+            AAPF_COMP = False
+            ORI_COMP = True
+            _, _, _, _, dist_EOF_to_Goal_APF_OriON, _, _, _ = self.CPA_loop(args, way_points, R, P, Y, AAPF_COMP, ORI_COMP)
+            dist_EOF_to_GOAL_traj.append(dist_EOF_to_Goal_APF_OriON)
+
+            self.joint_states.position = home_pos
+            self.scene.clear()
+            print("Generatin trajectory [AAPF: ON | Orientation Control: OFF]")
+            AAPF_COMP = True
+            ORI_COMP = False
+            _, _, _, _, dist_EOF_to_Goal_AAPF_OriOFF, _, _, _ = self.CPA_loop(args, way_points, R, P, Y, AAPF_COMP, ORI_COMP)
+            dist_EOF_to_GOAL_traj.append(dist_EOF_to_Goal_AAPF_OriOFF)
+
+            if args.CSV:
+                print_joint_angles(args, dist_EOF_to_GOAL_traj, 'COMP_dist_to_goal', 'dist_to_goal')
+
+
 
 
 def main(args):
@@ -562,9 +558,7 @@ def main(args):
     ur5_robot.scene.clear()
 
     # UR5 Initial position
-    # raw_input("' =========== Aperte enter para posicionar o UR5 \n")
     home_pos = [0, -1.5707, 0, -1.5707, -1.5707, -1.5707]
-    # home_pos = [-0.39491863, -1.72555185,  1.92111876, -3.44760581, -1.10707033, -0.09005711]
     ur5_robot.joint_states.position = home_pos
     ur5_robot.path_color = ColorRGBA(0.0, 1.0, 0.0, 0.8)
     way_points.append(ur5_robot.joint_states.position)
@@ -574,20 +568,12 @@ def main(args):
         raw_input("' =========== Aperte enter para posicionar o UR5 !!REAL!! na posicao UP\n")
         ur5_robot.move((home_pos,), "real")
 
-    ur5_robot_APF = None
-    if args.COMP:
-        ur5_robot_APF = MoveGroupPythonIntefaceTutorial(args, comp = True)
-        ur5_robot_APF.joint_states.position = home_pos
-        ur5_robot_APF.id_path = 201
-        ur5_robot_APF.path_color = ColorRGBA(0.0, 0.0, 1.0, 0.8)
-
     '''
     Trajectory 1
-
     '''
     point = [[0.80, 0, 0.45]]
     way_points = []
-    ur5_robot.trajectory_execution(args, point, home_pos, way_points, 'traj_1', ur5_robot_APF)
+    ur5_robot.trajectory_execution(args, point, home_pos, way_points, 'traj_1')#, ur5_robot_APF)
 
 if __name__ == '__main__':
     try:

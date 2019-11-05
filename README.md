@@ -29,12 +29,6 @@ Run the node corresponding to the file UR5_CPA_Gazebo.py
 
 `rosrun custom_codes UR5_CPA_Gazebo.py`
 
-If you want to see the path being publish from Gazebo to RVIZ please run publish_trajectory.py and run UR5_CPA_Gazebo with --plot parameter
-
-`rosrun custom_codes publish_trajectory.py`
-
-`rosrun custom_codes UR5_CPA_Gazebo.py --plot`
-
 If you want to see all the parameters related to UR5_CPA_Gazebo, please run the following command:
 
 `rosrun custom_codes UR5_CPA_Gazebo.py --h`
