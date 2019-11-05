@@ -67,6 +67,7 @@ def parse_args():
     parser.add_argument('--COMP', action='store_true', help='Compares distance to goal using APF, AAPF w/ and without ori control')
     parser.add_argument('--CSV', action='store_true', help='Write topics into a CSV file')
     parser.add_argument('--plot', action='store_true', help='Plot path to RVIZ through publish_trajectory.py (run this node first)')
+    parser.add_argument('--plotPath', action='store_true', help='Plot path to RVIZ through publish_trajectory.py (run this node first)')
     parser.add_argument('--realUR5', action='store_true', help='Enable real UR5 controlling')
     args = parser.parse_args()
     return args
@@ -156,9 +157,9 @@ class MoveGroupPythonIntefaceTutorial(object):
         print "Connected to server (gazebo)"
 
         # Obstacle positions
-        oc = [0.86, 0, 0.375]  # Obstacle reference point - 3D printer
+        oc = [-0.86, 0, 0.375]  # Obstacle reference point - 3D printer
         d1 = -0.080
-        s = -1
+        s = 1
         self.obs_pos = [oc, np.add(oc, [s * 0.14, 0.0925, 0.255 + d1]), np.add(oc, [s * 0.14, 0.185, 0.255 + d1]), np.add(oc, [s * 0.14, 0, 0.255 + d1]), np.add(oc, [s * 0.14, -0.0925, 0.255 + d1]), np.add(oc, [s * 0.14, -0.185, 0.255 + d1]),
                    np.add(oc, [s * 0.14, -0.185, 0.16 + d1]), np.add(oc, [s * 0.14, 0.185, 0.16 + d1]), np.add(oc, [s * 0.14, 0.0925, 0.05 + d1]), np.add(oc, [s * 0.14, 0.185, 0.05 + d1]), np.add(oc, [s * 0.14, 0, 0.05 + d1]),
                    np.add(oc, [s * 0.14, -0.0925, 0.05 + d1]), np.add(oc, [s * 0.14, -0.185, 0.05 + d1])]
@@ -167,7 +168,7 @@ class MoveGroupPythonIntefaceTutorial(object):
         self.add_sphere(self.obs_pos, self.diam_obs, ColorRGBA(1.0, 0.0, 0.0, 0.3))
 
         # CPA PARAMETERS
-        self.eta = [0.0001 for i in range(6)]  # Repulsive gain of each obstacle default: 0.00006
+        self.eta = [0.00001 for i in range(6)]  # Repulsive gain of each obstacle default: 0.00006
 
         if args.realUR5:
             self.clientreal = actionlib.SimpleActionClient('follow_joint_trajectory', FollowJointTrajectoryAction)
@@ -422,7 +423,7 @@ class MoveGroupPythonIntefaceTutorial(object):
             # Get current position of grasping_link
             ptAtual = get_ur5_position(self.ur5_param, self.joint_states.position, "grasping_link")
 
-            if self.plot_path:
+            if args.plotPath:
                 # Visualize path planned in RVIZ
                 self.visualize_path_planned(ptAtual)
 
@@ -472,12 +473,8 @@ class MoveGroupPythonIntefaceTutorial(object):
         # Final positions
         self.ptFinal = point
 
-        # ptAtual, oriAtual = self.tf.lookupTransform("base_link", "grasping_link", rospy.Time())
-        # raw_input("OriAtual: " + str(euler_from_quaternion(oriAtual)) )
-
         # Angle correction relative to base_link (from grasping_link)
-        #
-        R, P, Y = 1.5707, 0, 1.5707
+        R, P, Y = 1.5707, 0, -1.5707
 
         if not args.COMP:
             way_points, n, dist_EOF_to_Goal, ur5_joint_positions_vec, dist_EOF_to_Goal_vec, joint_attractive_forces, joint_rep_forces, ori_atual_rep = \
@@ -558,7 +555,7 @@ def main(args):
     ur5_robot.scene.clear()
 
     # UR5 Initial position
-    home_pos = [0, -1.5707, 0, -1.5707, -1.5707, -1.5707]
+    home_pos = [3.14, -1.5707, 0, -1.5707, -1.5707, -1.5707] # default: [0, -1.5707, 0, -1.5707, -1.5707, -1.5707]
     ur5_robot.joint_states.position = home_pos
     ur5_robot.path_color = ColorRGBA(0.0, 1.0, 0.0, 0.8)
     way_points.append(ur5_robot.joint_states.position)
@@ -571,7 +568,7 @@ def main(args):
     '''
     Trajectory 1
     '''
-    point = [[0.80, 0, 0.45]]
+    point = [[-0.80, 0, 0.45]]
     way_points = []
     ur5_robot.trajectory_execution(args, point, home_pos, way_points, 'traj_1')#, ur5_robot_APF)
 
