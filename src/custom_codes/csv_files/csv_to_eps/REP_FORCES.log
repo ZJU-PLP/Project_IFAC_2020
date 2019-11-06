@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7230) (preloaded format=pdflatex 2019.11.5)  5 NOV 2019 13:28
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7230) (preloaded format=pdflatex 2019.11.5)  5 NOV 2019 20:31
 entering extended mode
 **./REP_FORCES.tex
 (REP_FORCES.tex
@@ -577,44 +577,45 @@ ABD: EveryShipout initializing macros
 Package pgfplots notification 'compat/show suggested version=true': document ha
 s been generated with the most recent feature set (\pgfplotsset{compat=1.16}).
 
-===== Image 'tikz/REP_FORCES-figure0' is up-to-date. ======
-\openout3 = `tikz/REP_FORCES-figure1.md5'.
+===== Image 'tikz/rep_forces/REP_FORCES-figure0' is up-to-date. ======
+\openout3 = `tikz/rep_forces/REP_FORCES-figure1.md5'.
 
 \openout3 = `REP_FORCES.auxlock'.
 
 ===== 'mode=convert with system call': Invoking 'pdflatex -shell-escape -halt-o
-n-error -interaction=batchmode -jobname "tikz/REP_FORCES-figure1" "\def\tikzext
-ernalrealjob{REP_FORCES}\input{REP_FORCES}" && pdftops -eps "tikz/REP_FORCES-fi
-gure1.pdf"' ========
+n-error -interaction=batchmode -jobname "tikz/rep_forces/REP_FORCES-figure1" "\
+def\tikzexternalrealjob{REP_FORCES}\input{REP_FORCES}" && pdftops -eps "tikz/re
+p_forces/REP_FORCES-figure1.pdf"' ========
 runsystem(pdflatex -shell-escape -halt-on-error -interaction=batchmode -jobname
- "tikz/REP_FORCES-figure1" "\def\tikzexternalrealjob{REP_FORCES}\input{REP_FORC
-ES}" && pdftops -eps "tikz/REP_FORCES-figure1.pdf")...executed.
+ "tikz/rep_forces/REP_FORCES-figure1" "\def\tikzexternalrealjob{REP_FORCES}\inp
+ut{REP_FORCES}" && pdftops -eps "tikz/rep_forces/REP_FORCES-figure1.pdf")...exe
+cuted.
 
 \openout3 = `REP_FORCES.auxlock'.
 
-===== Image 'tikz/REP_FORCES-figure2' is up-to-date. ======
-[1{/home/caio/.miktex/texmfs/data/pdftex/config/pdftex.map} <./tikz/REP_FORCES-
-figure0.pdf> <./tikz/REP_FORCES-figure1.pdf> <./tikz/REP_FORCES-figure2.pdf>]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 180.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 180.
-
-(REP_FORCES.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 180.
-Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 180.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 180.
+===== Image 'tikz/rep_forces/REP_FORCES-figure2' is up-to-date. ======
+[1{/home/caio/.miktex/texmfs/data/pdftex/config/pdftex.map} <./tikz/rep_forces/
+REP_FORCES-figure0.pdf> <./tikz/rep_forces/REP_FORCES-figure1.pdf> <./tikz/rep_
+forces/REP_FORCES-figure2.pdf>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 183.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 183.
+ (REP_FORCES.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 183.
+Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 183.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 183.
  ) 
 Here is how much of TeX's memory you used:
  22065 strings out of 494415
- 586415 string characters out of 3174633
+ 586426 string characters out of 3174633
  760473 words of memory out of 3000000
  25814 multiletter control sequences out of 15000+200000
  3640 words of font info for 14 fonts, out of 3000000 for 9000
  0 hyphenation exceptions out of 8191
  78i,5n,136p,731b,609s stack positions out of 5000i,500n,10000p,200000b,50000s
  </home/caio/.miktex/texmfs/data/fonts/pk/ljfour/public/cm/dpi600/cmr10.pk>
-Output written on REP_FORCES.pdf (1 page, 190794 bytes).
+Output written on REP_FORCES.pdf (1 page, 185780 bytes).
 PDF statistics:
- 246 PDF objects out of 1000 (max. 8388607)
+ 243 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  28 words of extra memory for PDF output out of 10000 (max. 10000000)
 

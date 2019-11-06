@@ -30,7 +30,7 @@
 \begin{figure}
      \centering
      \begin{tikzpicture}
-      \pgfplotstableread{REPFORCE_AAPF_OriON.csv}{\Data}
+      \pgfplotstableread{csv_files/REPFORCE_AAPF_OriON.csv}{\Data}
       \begin{axis}[
           title={$F_{rep}$ (AAPF) with Orientation Control},
           title style={at={(0.5,1.15)}, anchor=north},
@@ -39,10 +39,10 @@
           ylabel={Magnitude of $F_{rep}$},
           height = 4cm,
           width = 8.8cm,
-          xmin=0, xmax=1337,
-          ymin=-0.0015, ymax=0.002,
-          xtick distance={400},
-          ytick distance={0.0005},
+          xmin=0, xmax=661,
+          ymin=-0.00015, ymax=0.0002,
+          xtick distance={200},
+          ytick distance={0.00005},
           ymajorgrids=true,
           scaled y ticks = false,
           grid style=dashed,
@@ -81,7 +81,7 @@
  \begin{figure}
      \centering
      \begin{tikzpicture}
-      \pgfplotstableread{REPFORCE_APF_OriON.csv}{\Data}
+      \pgfplotstableread{csv_files/REPFORCE_APF_OriON.csv}{\Data}
       \begin{axis}[
           title={$F_{rep}$ (APF) with Orientation Control},
           title style={at={(0.5,1.15)}, anchor=north},
@@ -91,9 +91,9 @@
           height = 4cm,
           width = 8.8cm,
           xmin=0, xmax=1500,
-          ymin=-0.022, ymax=0.02,
+          ymin=-0.003, ymax=0.004,
           xtick distance={400},
-          ytick distance={0.006},
+          ytick distance={0.001},
           ymajorgrids=true,
           scaled y ticks = false,
           grid style=dashed,
@@ -132,7 +132,7 @@
  \begin{figure}
      \centering
      \begin{tikzpicture}
-      \pgfplotstableread{REPFORCE_AAPF_OriOFF.csv}{\Data}
+      \pgfplotstableread{csv_files/REPFORCE_AAPF_OriOFF.csv}{\Data}
       \begin{axis}[
           title={$F_{rep}$ (AAPF) without Orientation Control},
           title style={at={(0.5,1.15)}, anchor=north},

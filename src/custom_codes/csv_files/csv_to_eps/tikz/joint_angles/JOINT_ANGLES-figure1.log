@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7230) (preloaded format=pdflatex 2019.11.5)  5 NOV 2019 13:48
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7230) (preloaded format=pdflatex 2019.11.5)  5 NOV 2019 21:06
 entering extended mode
 **\def\tikzexternalrealjob{JOINT_ANGLES}\input{JOINT_ANGLES}
 (JOINT_ANGLES.tex (/home/caio/.miktex/texmfs/install/tex/latex/base/article.cls
@@ -544,7 +544,7 @@ A tikzpicture has been optimized away. Use '/tikz/external/optimize=false' to d
 isable this.
 \openout4 = `tikz/joint_angles/JOINT_ANGLES-figure1.dpth'.
 
-PGFPlots: reading {joint_APF_OriON.csv}
+PGFPlots: reading {csv_files/joint_APF_OriON.csv}
 \tikzexternal@dep@file=\write5
 \openout5 = `tikz/joint_angles/JOINT_ANGLES-figure1.dep'.
 
@@ -565,9 +565,9 @@ Package atveryend Info: Empty hook `AtEndAfterFileList' on input line 180.
 Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 180.
  ) 
 Here is how much of TeX's memory you used:
- 22636 strings out of 494415
- 602399 string characters out of 3174633
- 2202612 words of memory out of 3000000
+ 22637 strings out of 494415
+ 602409 string characters out of 3174633
+ 2194924 words of memory out of 3000000
  26388 multiletter control sequences out of 15000+200000
  3941 words of font info for 15 fonts, out of 3000000 for 9000
  0 hyphenation exceptions out of 8191
@@ -576,7 +576,7 @@ Here is how much of TeX's memory you used:
 home/caio/.miktex/texmfs/data/fonts/pk/ljfour/public/cm/dpi600/cmsy10.pk> </hom
 e/caio/.miktex/texmfs/data/fonts/pk/ljfour/public/cm/dpi600/cmmi10.pk> </home/c
 aio/.miktex/texmfs/data/fonts/pk/ljfour/public/cm/dpi600/cmr10.pk>
-Output written on tikz/joint_angles/JOINT_ANGLES-figure1.pdf (1 page, 75381 byt
+Output written on tikz/joint_angles/JOINT_ANGLES-figure1.pdf (1 page, 72435 byt
 es).
 PDF statistics:
  63 PDF objects out of 1000 (max. 8388607)

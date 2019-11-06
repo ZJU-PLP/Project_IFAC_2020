@@ -30,7 +30,7 @@
 \begin{figure}
      \centering
      \begin{tikzpicture}
-      \pgfplotstableread{joint_AAPF_OriON.csv}{\Data}
+      \pgfplotstableread{csv_files/joint_AAPF_OriON.csv}{\Data}
       \begin{axis}[
           title={AAPF with Orientation Control},
           title style={at={(0.5,1.15)}, anchor=north},
@@ -39,10 +39,10 @@
           ylabel={Joint Angles [rad]},
           height = 4cm,
           width = 8.8cm,
-          xmin=0, xmax=1339,
-          ymin=-4, ymax=4.5,
-          xtick distance={400},
-          ytick distance={1},
+          xmin=0, xmax=661,
+          ymin=-4, ymax=7,
+          xtick distance={200},
+          ytick distance={2},
           ymajorgrids=true,
           grid style=dashed,
           legend style={at={(0.5,0.95)}, anchor=north,legend columns=-1}
@@ -80,7 +80,7 @@
  \begin{figure}
      \centering
      \begin{tikzpicture}
-      \pgfplotstableread{joint_APF_OriON.csv}{\Data}
+      \pgfplotstableread{csv_files/joint_APF_OriON.csv}{\Data}
       \begin{axis}[
           title={APF with Orientation Control},
           title style={at={(0.5,1.15)}, anchor=north},
@@ -90,9 +90,9 @@
           height = 4cm,
           width = 8.8cm,
           xmin=0, xmax=1500,
-          ymin=-4, ymax=4.5,
+          ymin=-4, ymax=7,
           xtick distance={400},
-          ytick distance={1},
+          ytick distance={2},
           ymajorgrids=true,
           grid style=dashed,
           legend style={at={(0.5,0.95)}, anchor=north,legend columns=-1}
@@ -130,7 +130,7 @@
  \begin{figure}
      \centering
      \begin{tikzpicture}
-      \pgfplotstableread{joint_AAPF_OriOFF.csv}{\Data}
+      \pgfplotstableread{csv_files/joint_AAPF_OriOFF.csv}{\Data}
       \begin{axis}[
           title={AAPF without Orientation Control},
           title style={at={(0.5,1.15)}, anchor=north},
@@ -140,9 +140,9 @@
           height = 4cm,
           width = 8.8cm,
           xmin=0, xmax=1500,
-          ymin=-4, ymax=4.5,
+          ymin=-3.5, ymax=7,
           xtick distance={400},
-          ytick distance={1},
+          ytick distance={2},
           ymajorgrids=true,
           grid style=dashed,
           legend style={at={(0.5,0.95)}, anchor=north,legend columns=-1}

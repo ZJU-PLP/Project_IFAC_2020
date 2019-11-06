@@ -315,7 +315,7 @@ class MoveGroupPythonIntefaceTutorial(object):
             while not rospy.is_shutdown() and i < len(way_points):
                 g.trajectory.points.append(JointTrajectoryPoint(positions=way_points[i],
                                                                 velocities=[0] * 6,
-                                                                time_from_start=rospy.Duration(0.01 * i + 3))) #default 0.1*i + 5
+                                                                time_from_start=rospy.Duration(0.05 * i + 5))) #default 0.1*i + 5
                 i += 1
 
             if target == "gazebo":

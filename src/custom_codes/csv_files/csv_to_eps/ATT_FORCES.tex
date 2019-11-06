@@ -79,7 +79,7 @@
 \begin{figure}
      \centering
      \begin{tikzpicture}
-      \pgfplotstableread{ATTFORCE_AAPF_OriON.csv}{\Data}
+      \pgfplotstableread{csv_files/ATTFORCE_AAPF_OriON.csv}{\Data}
       \begin{axis}[
           title={$F_{att}$ (AAPF) with Orientation Control},
           title style={at={(0.5,1.15)}, anchor=north},
@@ -88,9 +88,9 @@
           ylabel={Magnitude of $F_att$},
           height = 4cm,
           width = 8.8cm,
-          xmin=0, xmax=1337,
-          ymin=-0.01, ymax=0.05,
-          xtick distance={400},
+          xmin=0, xmax=661,
+          ymin=-0.01, ymax=0.07,
+          xtick distance={200},
           ytick distance={0.01},
           ymajorgrids=true,
           scaled y ticks = false,
@@ -130,7 +130,7 @@
  \begin{figure}
      \centering
      \begin{tikzpicture}
-      \pgfplotstableread{ATTFORCE_APF_OriON.csv}{\Data}
+      \pgfplotstableread{csv_files/ATTFORCE_APF_OriON.csv}{\Data}
       \begin{axis}[
           title={$F_{att}$ (APF) with Orientation Control},
           title style={at={(0.5,1.15)}, anchor=north},
@@ -140,7 +140,7 @@
           height = 4cm,
           width = 8.8cm,
           xmin=0, xmax=1500,
-          ymin=-0.01, ymax=0.05,
+          ymin=-0.01, ymax=0.07,
           xtick distance={400},
           ytick distance={0.01},
           ymajorgrids=true,
@@ -181,7 +181,7 @@
  \begin{figure}
      \centering
      \begin{tikzpicture}
-      \pgfplotstableread{ATTFORCE_AAPF_OriOFF.csv}{\Data}
+      \pgfplotstableread{csv_files/ATTFORCE_AAPF_OriOFF.csv}{\Data}
       \begin{axis}[
           title={$F_{att}$ (AAPF) without Orientation Control},
           title style={at={(0.5,1.15)}, anchor=north},
@@ -191,7 +191,7 @@
           height = 4cm,
           width = 8.8cm,
           xmin=0, xmax=1500,
-          ymin=-0.01, ymax=0.05,
+          ymin=-0.01, ymax=0.07,
           xtick distance={400},
           ytick distance={0.01},
           ymajorgrids=true,
