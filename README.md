@@ -1,4 +1,4 @@
-## Project IFAC World Congress 2020
+## Project IFAC World Congress - 2020
 
 Repository dedicated to the implementation of Adaptive Artificial Potential Fields by Zhang (2017) for the UR5 robotic manipulator using ROS. A new method for controlling UR5 orientation using Artificial Potential Field is proposed. The full project description will be available shortly after acceptance of the publication in IFAC World Congress (2020)
 
