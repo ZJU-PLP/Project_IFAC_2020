@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7230) (preloaded format=pdflatex 2019.11.5)  5 NOV 2019 20:12
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7230) (preloaded format=pdflatex 2019.11.5)  8 NOV 2019 09:10
 entering extended mode
 **\def\tikzexternalrealjob{ATT_FORCES}\input{ATT_FORCES}
 (ATT_FORCES.tex (/home/caio/.miktex/texmfs/install/tex/latex/base/article.cls
@@ -567,7 +567,7 @@ Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 232.
 Here is how much of TeX's memory you used:
  22637 strings out of 494415
  602383 string characters out of 3174633
- 1325214 words of memory out of 3000000
+ 1325212 words of memory out of 3000000
  26388 multiletter control sequences out of 15000+200000
  3941 words of font info for 15 fonts, out of 3000000 for 9000
  0 hyphenation exceptions out of 8191
@@ -579,10 +579,10 @@ io/.miktex/texmfs/data/fonts/pk/ljfour/public/cm/dpi600/cmr7.pk> </home/caio/.m
 iktex/texmfs/data/fonts/pk/ljfour/public/cm/dpi600/cmsy7.pk> </home/caio/.mikte
 x/texmfs/data/fonts/pk/ljfour/public/cm/dpi600/cmsy10.pk> </home/caio/.miktex/t
 exmfs/data/fonts/pk/ljfour/public/cm/dpi600/cmr10.pk>
-Output written on tikz/att_forces/ATT_FORCES-figure0.pdf (1 page, 45077 bytes).
+Output written on tikz/att_forces/ATT_FORCES-figure0.pdf (1 page, 46134 bytes).
 
 PDF statistics:
- 84 PDF objects out of 1000 (max. 8388607)
+ 87 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  13 words of extra memory for PDF output out of 10000 (max. 10000000)
 

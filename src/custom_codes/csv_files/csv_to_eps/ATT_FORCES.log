@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7230) (preloaded format=pdflatex 2019.11.5)  5 NOV 2019 20:12
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7230) (preloaded format=pdflatex 2019.11.5)  8 NOV 2019 09:10
 entering extended mode
 **./ATT_FORCES.tex
 (ATT_FORCES.tex
@@ -577,7 +577,21 @@ ABD: EveryShipout initializing macros
 Package pgfplots notification 'compat/show suggested version=true': document ha
 s been generated with the most recent feature set (\pgfplotsset{compat=1.16}).
 
-===== Image 'tikz/att_forces/ATT_FORCES-figure0' is up-to-date. ======
+\openout3 = `tikz/att_forces/ATT_FORCES-figure0.md5'.
+
+\openout3 = `ATT_FORCES.auxlock'.
+
+===== 'mode=convert with system call': Invoking 'pdflatex -shell-escape -halt-o
+n-error -interaction=batchmode -jobname "tikz/att_forces/ATT_FORCES-figure0" "\
+def\tikzexternalrealjob{ATT_FORCES}\input{ATT_FORCES}" && pdftops -eps "tikz/at
+t_forces/ATT_FORCES-figure0.pdf"' ========
+runsystem(pdflatex -shell-escape -halt-on-error -interaction=batchmode -jobname
+ "tikz/att_forces/ATT_FORCES-figure0" "\def\tikzexternalrealjob{ATT_FORCES}\inp
+ut{ATT_FORCES}" && pdftops -eps "tikz/att_forces/ATT_FORCES-figure0.pdf")...exe
+cuted.
+
+\openout3 = `ATT_FORCES.auxlock'.
+
 \openout3 = `tikz/att_forces/ATT_FORCES-figure1.md5'.
 
 \openout3 = `ATT_FORCES.auxlock'.
@@ -627,9 +641,9 @@ Here is how much of TeX's memory you used:
  0 hyphenation exceptions out of 8191
  78i,5n,136p,731b,609s stack positions out of 5000i,500n,10000p,200000b,50000s
  </home/caio/.miktex/texmfs/data/fonts/pk/ljfour/public/cm/dpi600/cmr10.pk>
-Output written on ATT_FORCES.pdf (1 page, 192337 bytes).
+Output written on ATT_FORCES.pdf (1 page, 195459 bytes).
 PDF statistics:
- 249 PDF objects out of 1000 (max. 8388607)
+ 258 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  28 words of extra memory for PDF output out of 10000 (max. 10000000)
 
