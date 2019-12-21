@@ -159,7 +159,6 @@ class MoveGroupPythonIntefaceTutorial(object):
                    np.add(oc, [s * 0.14, -0.0925, 0.05 + d1]), np.add(oc, [s * 0.14, -0.185, 0.05 + d1])]
         self.diam_obs = [0.18] * len(self.obs_pos)  # Main obstacle repulsive field
         self.diam_obs[0] = 0.3
-        self.add_sphere(self.obs_pos, self.diam_obs, ColorRGBA(1.0, 0.0, 0.0, 0.3))
 
         # CPA PARAMETERS
         self.eta = [0.00001 for i in range(6)]  # Repulsive gain of each obstacle default: 0.00006
@@ -343,6 +342,7 @@ class MoveGroupPythonIntefaceTutorial(object):
         # self.add_obstacles("left", 0.35, 0.09, [-0.76, -0.185, 0.455], [0, 0, 0], 1, 0, 0)
 
         self.add_sphere(self.ptFinal, self.diam_goal, ColorRGBA(0.0, 1.0, 0.0, 1.0))
+        self.add_sphere(self.obs_pos, self.diam_obs, ColorRGBA(1.0, 0.0, 0.0, 0.3))
 
         # apply obstacle colors to moveit
         self.scene.sendColors()
